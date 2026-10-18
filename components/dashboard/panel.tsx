@@ -59,7 +59,7 @@ export function Area({ id, title, note, children }: { id: string; title: string;
         <h2 id={id} className="font-display text-2xl font-extrabold tracking-tight">
           {title}
         </h2>
-        {note ? <p className="text-sm text-muted">{note}</p> : null}
+        {note ? <div className="text-sm text-muted">{note}</div> : null}
       </div>
       {children}
     </section>
