@@ -18,6 +18,8 @@ export type NoteRow = {
   fullStamp: string;
   folder: string; // the folder key it's filed in
   folderName: string;
+  folderColor?: string; // a workspace or project folder's colour
+  folderCode?: string; // a project folder's code
   deleted: boolean;
 };
 
@@ -63,6 +65,8 @@ export async function getNotesPage(folder: string) {
   ];
   const trash: Folder = { key: DELETED, name: "Recently deleted", count: counts.filter((c) => c.deleted).reduce((n, c) => n + c.n, 0) };
 
+  const projectById = new Map(projects.map((p) => [p.id, p]));
+  const workspaceById = new Map(workspaces.map((w) => [w.id, w]));
   const names = new Map<string, string>([[UNFILED, "Notes"], ...workspaces.map((w) => [w.id, w.name] as const), ...projects.map((p) => [p.id, p.name] as const)]);
   const known = folder === ALL || folder === DELETED || names.has(folder);
   const key = known ? folder : ALL;
@@ -83,6 +87,8 @@ export async function getNotesPage(folder: string) {
       fullStamp: fullStamp(n.updatedAt),
       folder: filed,
       folderName: names.get(filed) ?? "Notes",
+      folderColor: n.projectId ? projectById.get(n.projectId)?.color : n.workspaceId ? workspaceById.get(n.workspaceId)?.color : undefined,
+      folderCode: n.projectId ? projectById.get(n.projectId)?.code : undefined,
       deleted: n.deletedAt != null,
     };
   });

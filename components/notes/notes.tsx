@@ -135,7 +135,7 @@ function List({ data, open, className }: { data: Data; open: NoteRow | null; cla
                           <span className="tabular shrink-0 text-ink/80">{n.stamp}</span>
                           <span className="truncate">{n.preview || "No additional text"}</span>
                         </span>
-                        {data.folder === ALL || data.folder === DELETED ? <span className="mt-0.5 block truncate text-xs text-muted">{n.folderName}</span> : null}
+                        {data.folder === ALL || data.folder === DELETED ? <FolderTag note={n} /> : null}
                       </Link>
                     </li>
                   ))}
@@ -145,6 +145,24 @@ function List({ data, open, className }: { data: Data; open: NoteRow | null; cla
         )}
       </div>
     </section>
+  );
+}
+
+/** Where a note is filed, at a glance: a project's code tag, a workspace's colour, or the plain Notes folder. */
+function FolderTag({ note: n }: { note: NoteRow }) {
+  return (
+    <span className="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs">
+      {n.folderCode ? (
+        <ProjectTag code={n.folderCode} color={n.folderColor!} />
+      ) : n.folderColor ? (
+        <span aria-hidden className="size-2 shrink-0" style={{ background: colorVar(n.folderColor) }} />
+      ) : (
+        <FolderIcon />
+      )}
+      {n.folderCode?.toLowerCase() === n.folderName.toLowerCase() ? null : (
+        <span className={`truncate ${n.folderColor ? "font-medium text-ink/90" : "text-muted"}`}>{n.folderName}</span>
+      )}
+    </span>
   );
 }
 
