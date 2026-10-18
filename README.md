@@ -28,8 +28,22 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 | `npm run db:studio` | Browse the database in Drizzle Studio |
 | `npm run typecheck` / `lint` | Checks |
 | `npm test` | Unit tests for the plain-TypeScript rules in `lib/domain/` and `lib/game/` |
+| `npm run test:e2e` | Browser tests: builds the app, runs it on a fresh test database, and clicks through the main flows and every page at desktop and phone width (`test:e2e:report` opens the last report) |
+| `npm run db:backup` | Save a copy of `local.db` to `backups/` now |
 | `npx tsx scripts/make-icons.tsx` | Re-render the app icons in `public/icons/` after a design change |
 | `npm run xp:rebuild` | Recompute every XP event from tasks, picks and routine ticks (after an import or a rule change) |
+
+## Backups
+
+While the app runs on `local.db`, it saves a copy to `backups/lanes-YYYY-MM-DD.db` once a day (on start, then checked hourly) and keeps the last 14 days. Your data only changes while the app runs, so that's when copies are made. `npm run db:backup` makes one on demand.
+
+To restore: stop the app, then `cp backups/lanes-2026-10-18.db local.db` (pick the day), and start it again.
+
+The copies sit on the same disk as `local.db`, so they cover mistakes and corruption, not a lost or broken laptop. A deployed Turso database has its own restore, and the app skips these copies there.
+
+## Browser tests
+
+`npm run test:e2e` never touches `local.db` or your passcode: it creates `e2e/.tmp/test.db` from the schema and seed, signs in with a test passcode, and runs the app on port 3124. The tests are in `e2e/`: `flows.spec.ts` (quick add, shipping a release, ticking a routine, paying a subscription) and `pages.spec.ts` (every page loads with no console errors and nothing wider than the screen). A run takes about a minute; when one fails, the report has a screenshot and a trace.
 
 ## Working with tasks
 

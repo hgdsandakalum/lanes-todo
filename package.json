@@ -16,7 +16,10 @@
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test lib/**/*.test.ts",
-    "xp:rebuild": "tsx --env-file=.env.local lib/db/rebuild-xp.ts"
+    "xp:rebuild": "tsx --env-file=.env.local lib/db/rebuild-xp.ts",
+    "db:backup": "bash scripts/backup.sh",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
@@ -30,6 +33,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
