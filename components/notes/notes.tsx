@@ -43,7 +43,7 @@ function Folders({ data, className }: { data: Data; className: string }) {
       {data.tree.map((w) => (
         <div key={w.key}>
           <ul>
-            <FolderLink folder={w} current={data.folder} icon={<span aria-hidden className="size-2.5 shrink-0" style={{ background: colorVar(w.color!) }} />} />
+            <FolderLink folder={w} current={data.folder} icon={<span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ background: colorVar(w.color!) }} />} />
             {w.children?.map((p) => (
               <FolderLink key={p.key} folder={p} current={data.folder} indent icon={<ProjectTag code={p.code!} color={p.color!} />} />
             ))}
@@ -157,7 +157,7 @@ function FolderTag({ note: n }: { note: NoteRow }) {
       {n.folderCode ? (
         <ProjectTag code={n.folderCode} color={n.folderColor!} />
       ) : n.folderColor ? (
-        <span aria-hidden className="size-2 shrink-0" style={{ background: colorVar(n.folderColor) }} />
+        <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: colorVar(n.folderColor) }} />
       ) : (
         <FolderIcon />
       )}
@@ -550,7 +550,7 @@ function MoveTo({ note, data, disabled, onMove }: { note: NoteRow; data: Data; d
 
 function CodeIcon({ className }: { className?: string }) {
   return (
-    <svg aria-hidden viewBox="0 0 20 20" className={className} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square">
+    <svg aria-hidden viewBox="0 0 20 20" className={className} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
       <path d="M7 5 2.5 10 7 15M13 5l4.5 5-4.5 5" />
     </svg>
   );

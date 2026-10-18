@@ -51,7 +51,7 @@ export type MetaIcon = keyof typeof PATHS;
 
 export function Icon({ name, className = "size-3.5" }: { name: MetaIcon; className?: string }) {
   return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" aria-hidden className={`shrink-0 ${className}`}>
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className={`shrink-0 ${className}`}>
       {PATHS[name]}
     </svg>
   );

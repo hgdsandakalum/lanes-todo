@@ -10,12 +10,12 @@ const cls = {
     "group flex min-w-0 flex-1 flex-col items-center gap-1.5 px-1 pb-1.5 pt-2.5 text-[11px] font-medium text-rail-muted aria-[current=page]:text-rail-ink",
 };
 
-/** A coin: a square outline in the item's colour, filled when its route is open. */
+/** A dot, like the logo's: a ring in the item's colour, filled when its route is open. */
 function Coin({ color }: { color: string }) {
   return (
     <span
       aria-hidden
-      className="size-3 shrink-0 border-2 transition-colors group-aria-[current=page]:bg-[var(--coin)]"
+      className="size-3 shrink-0 rounded-full border-2 transition-colors group-aria-[current=page]:bg-[var(--coin)]"
       style={{ borderColor: color, ["--coin" as string]: color }}
     />
   );

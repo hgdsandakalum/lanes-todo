@@ -90,7 +90,7 @@ export function ShipRelease({ projectId, tasks, today }: { projectId: string; ta
             className="w-full rounded-sm border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-queen"
           />
         </div>
-        <button disabled={pending || visible === 0} className="col-span-2 rounded-sm bg-queen px-4 py-2 text-sm font-semibold text-queen-ink disabled:cursor-not-allowed disabled:opacity-50">
+        <button disabled={pending || visible === 0} className="col-span-2 rounded-full bg-queen-fill px-4 py-2 text-sm font-semibold text-queen-ink hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
           {pending ? "Shipping…" : visible === 0 ? "Tick tasks to ship" : `Ship ${visible} to production`}
         </button>
         {state?.error ? (

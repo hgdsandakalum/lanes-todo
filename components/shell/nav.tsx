@@ -102,7 +102,7 @@ export function BottomNavSkeleton() {
 export function SearchButton() {
   return (
     <Link href="/search" aria-label="Search" className="grid size-10 place-items-center rounded-lg text-rail-muted hover:bg-rail-hover hover:text-rail-ink">
-      <svg aria-hidden viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square">
+      <svg aria-hidden viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3.5" y="3.5" width="9" height="9" />
         <path d="m12.5 12.5 4 4" />
       </svg>
@@ -114,7 +114,7 @@ export function SearchButton() {
 export function NotesButton() {
   return (
     <Link href="/notes" aria-label="Notes" className="grid size-10 place-items-center rounded-lg text-rail-muted hover:bg-rail-hover hover:text-rail-ink">
-      <svg aria-hidden viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square">
+      <svg aria-hidden viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <rect x="4" y="3" width="12" height="14" />
         <path d="M7 7h6M7 10h6M7 13h3" />
       </svg>

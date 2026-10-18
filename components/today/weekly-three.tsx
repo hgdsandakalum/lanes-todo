@@ -40,7 +40,7 @@ function StarSlot({ slot: { workspace: w, star, candidates } }: { slot: Slot }) 
   return (
     <li className="py-2.5 text-sm first:pt-0 last:pb-0">
       <div className="flex items-baseline gap-2">
-        <span aria-hidden className="size-2.5 shrink-0 self-center" style={{ background: colorVar(w.color) }} />
+        <span aria-hidden className="size-2.5 shrink-0 self-center rounded-full" style={{ background: colorVar(w.color) }} />
         <span className="shrink-0 text-muted">{w.name}</span>
         {star && !changing ? (
           <>

@@ -26,7 +26,7 @@ import { colorVar } from "@/lib/domain/palette";
 import { FINISHED_FOR_ME, stageLabel, type Stage, type TaskType } from "@/lib/domain/stages";
 import type { ChecklistItem, TaskRef } from "@/lib/db/schema";
 
-const smallBtn = "rounded-sm border border-line px-3 py-1.5 text-sm hover:border-ink disabled:opacity-60";
+const smallBtn = "rounded-full border border-line px-3.5 py-1.5 text-sm hover:border-ink disabled:opacity-60";
 const linkCls = "underline decoration-line underline-offset-4 hover:text-ink hover:decoration-ink";
 
 function Heading({ id, children, aside }: { id: string; children: React.ReactNode; aside?: React.ReactNode }) {
@@ -527,7 +527,7 @@ export function TimeSection({
       </p>
       {estimate != null ? (
         <div className="mt-2 h-1.5 w-full bg-sunk" aria-hidden>
-          <div className={`h-full ${over ? "bg-danger" : "bg-queen"}`} style={{ width: `${Math.min(100, (spent / estimate) * 100)}%` }} />
+          <div className={`h-full rounded-full ${over ? "bg-danger" : "bg-progress"}`} style={{ width: `${Math.min(100, (spent / estimate) * 100)}%` }} />
         </div>
       ) : null}
       {over ? <p className="mt-1 text-sm text-danger">{formatMinutes(spent - estimate!)} over the estimate.</p> : null}

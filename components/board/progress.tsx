@@ -55,8 +55,8 @@ export function SkillTracks({ code, design }: { code: number; design: number }) 
             <dt className="font-semibold">{t.label}</dt>
             <dd className="tabular text-muted">{t.value} XP</dd>
           </div>
-          <div className="mt-1.5 h-1.5 overflow-hidden bg-sunk">
-            <div className="h-full" style={{ width: `${(t.value / max) * 100}%`, background: t.color }} />
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-sunk">
+            <div className="h-full rounded-full" style={{ width: `${(t.value / max) * 100}%`, background: t.color }} />
           </div>
         </div>
       ))}

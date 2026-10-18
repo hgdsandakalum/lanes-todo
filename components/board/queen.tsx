@@ -1,35 +1,19 @@
-/** An octagon centred on the board, flat sides top/bottom, sized by its circumradius. */
-const oct = (r: number) =>
-  Array.from({ length: 8 }, (_, i) => {
-    const a = ((i * 45 + 22.5) * Math.PI) / 180;
-    return `${(60 + r * Math.cos(a)).toFixed(2)},${(60 + r * Math.sin(a)).toFixed(2)}`;
-  }).join(" ");
-
 /**
- * The centre of the board, cut as octagons to match its eight-point rosette. A picked deep task
- * fills the queen; an empty slot is a dashed outline, the board's line form for "waiting".
+ * The deep task's mark, after the logo's dot: two rings, and the dot inside on an indigo ring once a task is picked.
+ * An empty slot is a dashed ring, the line form for "waiting".
  */
 export function QueenMedallion({ filled, className = "" }: { filled: boolean; className?: string }) {
   return (
     <svg aria-hidden viewBox="0 0 120 120" className={className}>
-      <polygon points={oct(58)} fill="none" stroke="var(--line)" strokeWidth="1.5" strokeLinejoin="miter" />
-      <polygon points={oct(50)} fill="none" stroke="var(--line)" strokeWidth="1.5" strokeLinejoin="miter" />
-      {/* the rosette's eight points */}
-      {Array.from({ length: 8 }, (_, i) => (
-        <path
-          key={i}
-          d="M60 11 L64 26 L56 26 Z"
-          fill="var(--line)"
-          transform={`rotate(${i * 45} 60 60)`}
-        />
-      ))}
+      <circle cx="60" cy="60" r="57" fill="none" stroke="var(--line)" strokeWidth="1.5" />
+      <circle cx="60" cy="60" r="48" fill="none" stroke="var(--line)" strokeWidth="1.5" strokeDasharray="2 7" strokeLinecap="round" />
       {filled ? (
         <>
-          <polygon points={oct(28)} fill="var(--queen)" />
-          <polygon points={oct(20)} fill="none" stroke="var(--queen-ink)" strokeOpacity="0.45" strokeWidth="1.5" />
+          <circle cx="60" cy="60" r="30" fill="var(--queen-fill)" />
+          <circle cx="60" cy="60" r="14" fill="var(--pocket)" />
         </>
       ) : (
-        <polygon points={oct(27)} fill="none" stroke="var(--queen)" strokeWidth="2.5" strokeDasharray="6 6" />
+        <circle cx="60" cy="60" r="28" fill="none" stroke="var(--queen)" strokeWidth="2.5" strokeDasharray="6 6" strokeLinecap="round" />
       )}
     </svg>
   );

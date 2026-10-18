@@ -84,7 +84,7 @@ export function ProjectHeader({ project: p, href, order, page = false }: { proje
 
 function Arrow({ up = false }: { up?: boolean }) {
   return (
-    <svg aria-hidden viewBox="0 0 16 16" className={`size-4 ${up ? "" : "rotate-180"}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square">
+    <svg aria-hidden viewBox="0 0 16 16" className={`size-4 ${up ? "" : "rotate-180"}`} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" />
     </svg>
   );

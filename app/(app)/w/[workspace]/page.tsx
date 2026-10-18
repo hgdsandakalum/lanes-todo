@@ -57,7 +57,7 @@ async function Workspace({ params }: { params: PageProps<"/w/[workspace]">["para
     <div className="flex flex-col gap-12" style={{ ["--c" as string]: colorVar(ws.color) }}>
       <header>
         <h1 className="flex items-center gap-3 font-display text-4xl font-extrabold leading-none tracking-tight md:text-5xl">
-          <span aria-hidden className="size-3.5 shrink-0 bg-[var(--c)]" />
+          <span aria-hidden className="size-3.5 shrink-0 rounded-full bg-[var(--c)]" />
           {ws.name}
         </h1>
       </header>

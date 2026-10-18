@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 /*
- * The carrom board as a console: a near-black graphite field inside a black frame. Dark only, high contrast, tight corners.
- * One typeface, Archivo: headings run it expanded, text at normal width. Pieces are square-cut, not round.
- * The queen accent (electric cyan) belongs to the deep task and the level bar only.
+ * Drawn from the logo: an indigo lane, an orange base, a white dot, all cut as soft pills on near-black.
+ * Dark only, high contrast, rounded corners. One typeface, Archivo, at normal width like the wordmark.
+ * Indigo (still called "queen") is the accent: actions, focus, the deep task. Orange is progress: XP, levels, time.
  * Workspace colours own their lanes; state is shown by line form (solid, dashed, dotted), not hue.
  */
 :root {
-  --bg: #08090c; /* graphite, nearly black */
-  --surface: #11141a;
-  --sunk: #040507;
+  --bg: #08090e; /* near-black, a breath of the logo's indigo */
+  --surface: #11131c;
+  --sunk: #05060a;
   --ink: #eef3fa;
   --muted: #94a0b5;
-  --line: #313a49;
+  --line: #2e3446;
   --danger: #ff5c6c;
   --warn: var(--c-amber); /* waiting on someone else for too long: worth a look, not late */
 
@@ -22,8 +22,10 @@
   --rail-hover: #0f1218;
   --rail-line: #1d232d;
 
-  --queen: #14d2ff; /* electric cyan: the one accent */
-  --queen-ink: #00151c;
+  --queen: #7c86f2; /* the logo's indigo, lifted to read as text and lines on the dark */
+  --queen-fill: #4f5bd5; /* the logo's indigo itself, for filled buttons */
+  --queen-ink: #ffffff; /* text on the fill */
+  --progress: #f28c38; /* the logo's orange base: XP, levels, time spent */
   --pocket: #eef3fa;
 
   /* palette keys used by workspaces and projects: saturated signal colours, spread around the accent's cyan */
@@ -58,19 +60,23 @@
   --color-rail-hover: var(--rail-hover);
   --color-rail-line: var(--rail-line);
   --color-queen: var(--queen);
+  --color-queen-fill: var(--queen-fill);
   --color-queen-ink: var(--queen-ink);
+  --color-progress: var(--progress);
   --color-pocket: var(--pocket);
   --font-display: "Archivo Variable", "Helvetica Neue", system-ui, sans-serif;
   --font-sans: "Archivo Variable", "Helvetica Neue", system-ui, sans-serif;
 
-  /* tight corners: the board is cut, not moulded (no round pieces left) */
-  --radius-xs: 1px;
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 3px;
-  --radius-xl: 4px;
-  --radius-2xl: 5px;
-  --radius-3xl: 6px;
+  /* soft corners, after the logo's pills; buttons and chips go fully round */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
+  --radius-3xl: 18px;
+  /* headings are bold, not black, at the wordmark's width */
+  --font-weight-extrabold: 700;
 }
 
 html {
@@ -89,24 +95,29 @@ body {
 }
 
 ::selection {
-  background: var(--queen);
+  background: var(--queen-fill);
   color: var(--queen-ink);
 }
 
 :focus-visible {
   outline: 2px solid var(--queen);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: 6px;
+}
+
+/* line icons: their boxes get the logo's soft corners */
+svg[stroke="currentColor"] rect {
+  rx: 1.5px;
 }
 
 h1, h2, h3 {
   text-wrap: balance;
 }
 
-/* Headings are the same family as text, set wide: the width does the work a second face would. */
+/* Headings are the same family as text, at normal width like the wordmark. */
 @layer utilities {
   .font-display {
-    font-stretch: 125%;
+    font-stretch: 100%;
   }
 }
 

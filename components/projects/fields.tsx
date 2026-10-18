@@ -1,8 +1,8 @@
 import { colorVar, PALETTE } from "@/lib/domain/palette";
 
 export const inputCls = "w-full rounded-sm border border-line bg-bg px-3 py-2 text-sm outline-none focus:border-queen";
-export const primaryBtn = "rounded-sm bg-ink px-4 py-2 text-sm font-semibold text-bg disabled:opacity-60";
-export const quietBtn = "rounded-sm px-3 py-2 text-sm text-muted hover:bg-sunk hover:text-ink disabled:opacity-60";
+export const primaryBtn = "rounded-full bg-queen-fill px-5 py-2 text-sm font-semibold text-queen-ink hover:brightness-110 disabled:opacity-60";
+export const quietBtn = "rounded-full px-3.5 py-2 text-sm text-muted hover:bg-sunk hover:text-ink disabled:opacity-60";
 
 export function Field({ label, id, hint, children, className = "" }: { label: string; id: string; hint?: string; children: React.ReactNode; className?: string }) {
   return (

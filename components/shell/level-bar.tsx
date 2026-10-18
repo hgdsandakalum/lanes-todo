@@ -25,7 +25,7 @@ export function LevelBarView({ level, title, into, needed }: { level: number; ti
         </p>
       </div>
       <div
-        className="mt-2 h-1.5 overflow-hidden bg-rail-line"
+        className="mt-2 h-1.5 overflow-hidden rounded-full bg-rail-line"
         role="progressbar"
         aria-label="Progress to next level"
         aria-valuenow={pct}
@@ -33,7 +33,7 @@ export function LevelBarView({ level, title, into, needed }: { level: number; ti
         aria-valuemax={100}
       >
         <div
-          className="h-full bg-queen transition-[width] duration-700 ease-out"
+          className="h-full rounded-full bg-progress transition-[width] duration-700 ease-out"
           style={{ width: `max(${pct}%, 0.5rem)` }}
         />
       </div>

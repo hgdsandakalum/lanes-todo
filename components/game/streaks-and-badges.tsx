@@ -39,7 +39,7 @@ export function Achievements({ list, today }: { list: Achievement[]; today: stri
 function Badge({ a, today }: { a: Achievement; today: string }) {
   return (
     <li className="flex items-start gap-3 py-2.5">
-      <span aria-hidden className={`mt-1 size-3 shrink-0 rotate-45 border-2 ${a.unlockedAt ? "border-queen bg-queen" : "border-line"}`} />
+      <span aria-hidden className={`mt-1 size-3 shrink-0 rounded-full border-2 ${a.unlockedAt ? "border-progress bg-progress" : "border-line"}`} />
       <span className="min-w-0">
         <span className={`block text-sm ${a.unlockedAt ? "font-medium" : a.available ? "" : "text-muted"}`}>
           {a.title}

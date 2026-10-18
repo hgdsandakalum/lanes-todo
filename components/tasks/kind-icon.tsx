@@ -38,7 +38,7 @@ const PATHS: Record<CodeKind | "design" | "general", React.ReactNode> = {
 export function KindIcon({ type, kind, className = "size-4" }: { type: TaskType; kind?: string | null; className?: string }) {
   const k = codeKind(type, kind) ?? (type as "design" | "general");
   return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" className={`shrink-0 ${className}`} role="img" aria-label={taskKindLabel(type, kind)}>
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${className}`} role="img" aria-label={taskKindLabel(type, kind)}>
       {PATHS[k]}
     </svg>
   );
