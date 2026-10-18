@@ -323,6 +323,26 @@ export const subscriptionPayments = sqliteTable(
   (t) => [index("sub_payments_sub_idx").on(t.subscriptionId)],
 );
 
+/**
+ * Notes, filed like Apple Notes folders: in a project, in a workspace, or in neither (the plain "Notes" folder).
+ * At most one of projectId / workspaceId is set. The first line of the body is the title. Deleting sets deletedAt;
+ * deleted notes are cleared for good after 30 days.
+ */
+export const notes = sqliteTable(
+  "notes",
+  {
+    id: text("id").primaryKey(),
+    body: text("body").notNull().default(""),
+    workspaceId: text("workspace_id").references(() => workspaces.id, { onDelete: "set null" }),
+    projectId: text("project_id").references(() => projects.id, { onDelete: "set null" }),
+    pinned: integer("pinned", { mode: "boolean" }).notNull().default(false),
+    createdAt: ms("created_at").notNull().default(now),
+    updatedAt: ms("updated_at").notNull().default(now),
+    deletedAt: ms("deleted_at"),
+  },
+  (t) => [index("notes_updated_idx").on(t.updatedAt)],
+);
+
 /** Wrong passcodes, for the sign-in lockout in lib/domain/login-limit.ts. Cleared on a correct one and after a day. */
 export const loginFailures = sqliteTable(
   "login_failures",
@@ -348,3 +368,4 @@ export type Label = typeof labels.$inferSelect;
 export type TaskRef = typeof taskRefs.$inferSelect;
 export type Template = typeof templates.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
+export type Note = typeof notes.$inferSelect;

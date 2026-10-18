@@ -39,6 +39,7 @@ export async function GET(req: Request) {
       templates: s.templates,
       subscriptions: s.subscriptions,
       subscriptionPayments: s.subscriptionPayments,
+      notes: s.notes,
     };
     const data = Object.fromEntries(await Promise.all(Object.entries(tables).map(async ([k, t]) => [k, await db.select().from(t)])));
     return new Response(JSON.stringify({ app: "lanes", version: 2, exportedAt: new Date().toISOString(), data }, null, 2), {

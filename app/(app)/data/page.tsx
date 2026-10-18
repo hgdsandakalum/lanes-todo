@@ -23,7 +23,7 @@ export default function DataPage() {
               Full backup (JSON)
             </a>
           </dt>
-          <dd className="text-sm text-muted">Every table: projects, tasks, checklists, labels, references, time, XP, streak history, reviews, templates and subscriptions. Keep one before big changes.</dd>
+          <dd className="text-sm text-muted">Every table: projects, tasks, checklists, labels, references, time, XP, streak history, reviews, templates, subscriptions and notes. Keep one before big changes.</dd>
           <dt>
             <a href="/api/export?format=csv" className={btn} download>
               Tasks (CSV)

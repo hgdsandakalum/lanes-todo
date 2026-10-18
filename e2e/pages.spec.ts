@@ -11,6 +11,8 @@ const PAGES = [
   "/w/admin",
   "/routines",
   "/subscriptions",
+  "/notes",
+  "/notes?f=all",
   "/templates",
   "/search?q=gaku",
   "/data",

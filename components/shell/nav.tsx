@@ -31,6 +31,9 @@ export async function Nav() {
       <NavLink href="/search" color={TOOL}>
         Search
       </NavLink>
+      <NavLink href="/notes" color={TOOL}>
+        Notes
+      </NavLink>
       <NavLink href="/templates" color={TOOL}>
         Templates
       </NavLink>
@@ -102,6 +105,18 @@ export function SearchButton() {
       <svg aria-hidden viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square">
         <rect x="3.5" y="3.5" width="9" height="9" />
         <path d="m12.5 12.5 4 4" />
+      </svg>
+    </Link>
+  );
+}
+
+/** Notes on phones, where the tools in the rail don't fit the bottom bar. */
+export function NotesButton() {
+  return (
+    <Link href="/notes" aria-label="Notes" className="grid size-10 place-items-center rounded-lg text-rail-muted hover:bg-rail-hover hover:text-rail-ink">
+      <svg aria-hidden viewBox="0 0 20 20" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square">
+        <rect x="4" y="3" width="12" height="14" />
+        <path d="M7 7h6M7 10h6M7 13h3" />
       </svg>
     </Link>
   );

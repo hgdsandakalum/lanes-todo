@@ -1,14 +1,15 @@
 import "server-only";
-import { and, desc, eq, inArray, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, like, or, sql } from "drizzle-orm";
 import { db, schema as s } from "@/lib/db/client";
 import { requireSession } from "@/lib/auth/session";
+import { noteTitle } from "@/lib/domain/notes";
 
 /** Escapes LIKE wildcards so "50%" and "a_b" match literally. */
 const pattern = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 const likeI = (col: Parameters<typeof like>[0], p: string) => sql`${col} like ${p} escape '\\'`;
 
 export type Hit = {
-  kind: "task" | "project" | "release" | "review";
+  kind: "task" | "project" | "release" | "review" | "note";
   id: string;
   title: string;
   href: string | null; // day reviews have no page of their own
@@ -41,7 +42,7 @@ const TASK_FIELDS = [
 ] as const;
 
 /**
- * Searches tasks (every text field, checklists, labels, references), projects, releases and day reviews.
+ * Searches tasks (every text field, checklists, labels, references), projects, releases, notes and day reviews.
  * Open tasks come before closed ones; at most `limit` task results.
  */
 export async function search(query: string, limit = 60): Promise<Hit[]> {
@@ -62,7 +63,7 @@ export async function search(query: string, limit = 60): Promise<Hit[]> {
     ...Object.fromEntries(TASK_FIELDS.map(([f]) => [f, s.tasks[f]])),
   } as const;
 
-  const [direct, viaChecklist, viaLabel, viaRef, projects, releases, reviews] = await Promise.all([
+  const [direct, viaChecklist, viaLabel, viaRef, projects, releases, reviews, notes] = await Promise.all([
     db
       .select(taskCols)
       .from(s.tasks)
@@ -100,6 +101,12 @@ export async function search(query: string, limit = 60): Promise<Hit[]> {
       .where(likeI(s.releases.name, p))
       .limit(10),
     db.select().from(s.dayReviews).where(likeI(s.dayReviews.note, p)).orderBy(desc(s.dayReviews.date)).limit(10),
+    db
+      .select({ id: s.notes.id, body: s.notes.body })
+      .from(s.notes)
+      .where(and(isNull(s.notes.deletedAt), likeI(s.notes.body, p)))
+      .orderBy(desc(s.notes.updatedAt))
+      .limit(20),
   ]);
 
   const hits: Hit[] = [];
@@ -143,6 +150,7 @@ export async function search(query: string, limit = 60): Promise<Hit[]> {
     hits.unshift({ kind: "project", id: pr.id, title: pr.name, href: `/w/${pr.slug}/${pr.code.toLowerCase()}`, where: pr.ws, snippet: null, meta: { projectCode: pr.code, projectColor: pr.color } });
   for (const r of releases)
     hits.push({ kind: "release", id: r.id, title: r.name, href: `/w/${r.slug}/${r.code.toLowerCase()}#releases`, where: "Release", snippet: null, meta: { projectCode: r.code, projectColor: r.color } });
+  for (const n of notes) hits.push({ kind: "note", id: n.id, title: noteTitle(n.body), href: `/notes?f=all&n=${n.id}`, where: "Note", snippet: snippet(n.body, q), meta: {} });
   for (const d of reviews) hits.push({ kind: "review", id: d.date, title: `Day review, ${d.date}`, href: null, where: "End-of-day note", snippet: snippet(d.note, q), meta: {} });
   return hits;
 }

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Suspense } from "react";
 import { LevelBar, LevelBarSkeleton } from "@/components/shell/level-bar";
-import { BottomNav, BottomNavSkeleton, LogoutButton, Nav, NavSkeleton, SearchButton } from "@/components/shell/nav";
+import { BottomNav, BottomNavSkeleton, LogoutButton, Nav, NavSkeleton, NotesButton, SearchButton } from "@/components/shell/nav";
 import { SearchShortcut } from "@/components/search/search-box";
 import { QuickAddBar, QuickAddSkeleton } from "@/components/tasks/quick-add-bar";
 import { OfflineNotice } from "@/components/shell/offline-notice";
@@ -26,6 +26,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
             </Suspense>
           </div>
           <div className="flex md:hidden">
+            <NotesButton />
             <SearchButton />
             <LogoutButton compact />
           </div>

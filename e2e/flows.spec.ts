@@ -89,3 +89,39 @@ test("a subscription can be added, paid and the payment undone", async ({ page }
   await page.getByRole("button", { name: `Undo the ${name} payment` }).click();
   await expect(page.getByRole("button", { name: `Mark ${name} paid` })).toBeVisible();
 });
+
+test("a note is written, saved, filed under a project, pinned, deleted and restored", async ({ page }) => {
+  const title = `Launch checklist ${tag}`;
+  await open(page, "/notes?f=all");
+  await page.getByRole("button", { name: "New note" }).first().click();
+  await expect(page.getByLabel("Title")).toBeFocused();
+  await page.getByLabel("Title").fill(title);
+  await page.getByLabel("Title").press("Enter");
+  await page.getByLabel("Note", { exact: true }).fill("Ship the export\nTell the client");
+  await expect(page.getByText("Saved")).toBeVisible();
+
+  // it survives a reload, and the list shows its title and preview
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  const row = page.getByRole("link", { name: new RegExp(title) });
+  await expect(row).toContainText("Ship the export Tell the client");
+
+  await page.getByLabel("Folder", { exact: true }).selectOption({ label: "Gaku" });
+  await open(page, "/notes?f=pr_gaku");
+  await row.click();
+  await page.getByRole("button", { name: "Pin note" }).click();
+  await expect(page.getByRole("button", { name: "Unpin note" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pinned" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Delete note" }).click();
+  await expect(row).toHaveCount(0);
+  await open(page, "/notes?f=deleted");
+  await row.click();
+  await page.getByRole("button", { name: "Restore" }).click();
+  await open(page, "/notes?f=pr_gaku");
+  await expect(row).toBeVisible();
+
+  // and Search finds it
+  await open(page, `/search?q=${encodeURIComponent(title)}`);
+  await expect(page.getByRole("link", { name: title })).toBeVisible();
+});
