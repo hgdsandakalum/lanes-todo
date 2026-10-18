@@ -73,7 +73,8 @@ export const tasks = sqliteTable(
     actual: text("actual"),
     blocker: text("blocker"), // what is in the way, in words; task dependencies live in task_deps
     stage: text("stage").notNull().default("todo"), // see lib/domain/stages.ts
-    due: text("due"), // YYYY-MM-DD, local calendar day
+    due: text("due"), // YYYY-MM-DD, local calendar day; for code, the dev release deadline
+    prodDate: text("prod_date"), // code: the production release date the client gives after their QA; YYYY-MM-DD
     // unused: picks are dated, so they live in deep_tasks and weekly_stars; drop in a later migration
     star: integer("star", { mode: "boolean" }).notNull().default(false),
     focus: integer("focus", { mode: "boolean" }).notNull().default(false),

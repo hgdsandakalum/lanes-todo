@@ -69,6 +69,9 @@ export function workflow(type: TaskType, kind?: string | null): Stage[] {
   return k ? KIND_STAGES[k] : STAGES[type];
 }
 
+/** Work that goes to production through a release (features, refactors, bug fixes), so it can carry a prod date. */
+export const shipsToProd = (type: TaskType, kind?: string | null) => workflow(type, kind).some((s) => s.key === "prod_released");
+
 /** The stage at which the task closes for good. */
 export const closingStage = (type: TaskType, kind?: string | null) => workflow(type, kind).at(-1)!.key;
 

@@ -2,7 +2,8 @@ import "server-only";
 import { and, asc, desc, eq, isNull, lt } from "drizzle-orm";
 import { db, schema as s } from "@/lib/db/client";
 import { requireSession } from "@/lib/auth/session";
-import { addDays, daysBetween, ymd } from "@/lib/domain/dates";
+import { addDays } from "@/lib/domain/dates";
+import { prodWait, waitingMark, withClient } from "@/lib/domain/due";
 import { FINISHED_FOR_ME } from "@/lib/domain/stages";
 import { DUE_SOON_DAYS, starWeek, WEEKLY_THREE_SLUGS } from "@/lib/domain/weekly";
 
@@ -15,6 +16,7 @@ const todayTask = {
   kind: s.tasks.kind,
   stage: s.tasks.stage,
   due: s.tasks.due,
+  prodDate: s.tasks.prodDate,
   branch: s.tasks.branch,
   link: s.tasks.link,
   devReleasedAt: s.tasks.devReleasedAt,
@@ -78,14 +80,12 @@ export async function getToday(day: string) {
     }));
 
   const soon = addDays(day, DUE_SOON_DAYS);
-  const dueSoon = pickable.filter((t) => t.due != null && t.due <= soon).sort((a, b) => a.due!.localeCompare(b.due!));
+  // design sent for feedback is the client's move, so its due date waits
+  const dueSoon = pickable.filter((t) => t.due != null && t.due <= soon && !withClient(t)).sort((a, b) => a.due!.localeCompare(b.due!));
 
   const awaiting = open
     .filter((t) => t.type === "code" && t.devReleasedAt != null)
-    .map((t) => {
-      const waited = daysBetween(ymd(t.devReleasedAt!), day);
-      return { ...t, waited, flagged: waited > t.prodWaitDays };
-    })
+    .map((t) => ({ ...t, ...prodWait(t, day, t.prodWaitDays), mark: waitingMark(t, day, t.prodWaitDays) }))
     .sort((a, b) => b.waited - a.waited);
 
   return {

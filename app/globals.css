@@ -14,6 +14,7 @@
   --muted: #94a0b5;
   --line: #313a49;
   --danger: #ff5c6c;
+  --warn: var(--c-amber); /* waiting on someone else for too long: worth a look, not late */
 
   --rail: #020304; /* black frame */
   --rail-ink: #eef3fa;
@@ -50,6 +51,7 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-danger: var(--danger);
+  --color-warn: var(--warn);
   --color-rail: var(--rail);
   --color-rail-ink: var(--rail-ink);
   --color-rail-muted: var(--rail-muted);

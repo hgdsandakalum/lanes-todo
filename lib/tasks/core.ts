@@ -4,7 +4,7 @@ import { db, schema as s } from "@/lib/db/client";
 import { ymd } from "@/lib/domain/dates";
 import { DESCRIPTION_MAX, parseQuickAdd } from "@/lib/domain/quick-add";
 import { nextDate, parseRecur } from "@/lib/domain/recur";
-import { closingStage, stageDates, stagesFor, type TaskType } from "@/lib/domain/stages";
+import { closingStage, stageDates, stagesFor, type CodeKind, type TaskType } from "@/lib/domain/stages";
 import { reconcileTask } from "@/lib/game/engine";
 
 /**
@@ -55,6 +55,7 @@ export async function addTask(input: {
   branch?: string | null;
   description?: string | null;
   parentId?: string | null;
+  kind?: CodeKind; // used when the line names no @type
 }): Promise<Added> {
   const parsed = parseQuickAdd(input.text, ymd());
   if (!parsed.ok) return { ok: false, error: parsed.error };
@@ -68,7 +69,8 @@ export async function addTask(input: {
   if (!project) return { ok: false, error: q.project ? `No active project uses #${q.project.toLowerCase()}.` : "Add a #project to say where this goes." };
 
   const branches = q.branches ?? (input.branch && (q.type ?? "code") === "code" ? [input.branch] : []);
-  const type: TaskType = q.type ?? (branches.length ? "code" : "general");
+  const kind = q.type || q.kind ? q.kind : input.kind;
+  const type: TaskType = q.type ?? (kind || branches.length ? "code" : "general");
   const description = input.description?.trim() || null;
   if (description && description.length > DESCRIPTION_MAX) return { ok: false, error: `Keep the description under ${DESCRIPTION_MAX.toLocaleString("en")} characters.` };
 
@@ -82,7 +84,7 @@ export async function addTask(input: {
       title: q.title,
       description,
       type,
-      kind: q.kind ?? null,
+      kind: kind && kind !== "feature" ? kind : null,
       priority: q.priority ?? null,
       estimateMin: q.estimate ?? null,
       due: q.due ?? null,

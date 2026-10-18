@@ -45,6 +45,45 @@ test("a code task goes from dev released to a shipped release", async ({ page })
   await expect(ready.getByText(title)).toHaveCount(0);
 });
 
+test("a dev released task stops being late, takes QA bugs and a prod date", async ({ page }) => {
+  const title = `QA flow ${tag}`;
+  const day = (offset: number) => new Date(Date.now() + offset * 864e5).toLocaleDateString("en-CA", { timeZone: "Asia/Colombo" });
+  await open(page, "/w/softsora/gk");
+  await quickAdd(page, `${title} #gk @code`);
+  await page.reload();
+  await page.getByRole("link", { name: title }).click();
+  await page.waitForLoadState("networkidle");
+
+  // late while it's yours
+  await page.getByText("Edit task").click();
+  await page.getByLabel("Due", { exact: true }).fill(day(-3));
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator("main").getByText(/^Was due /)).toBeVisible();
+
+  // dev released: no longer late, the wait counts instead, and the miss is noted quietly
+  await page.getByLabel(`Stage of ${title}`).first().selectOption("dev_released");
+  await expect(page.locator("main").getByText("Dev released today")).toBeVisible();
+  await expect(page.locator("main").getByText("3 days late", { exact: true })).toBeVisible();
+  await expect(page.locator("main").getByText(/^Was due /)).toHaveCount(0);
+
+  // QA finds a bug: it's a bug fix subtask, counted on the card
+  await page.getByLabel("New QA bug").fill(`Button misaligned ${tag}`);
+  await page.getByLabel("New QA bug").press("Enter");
+  await expect(page.getByRole("link", { name: `Button misaligned ${tag}` })).toBeVisible();
+  await expect(page.getByText("1 QA bug to fix", { exact: false })).toBeVisible();
+
+  // the client's date replaces the wait, and goes red only once it's missed
+  await page.getByLabel("Prod date").fill(day(-1));
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator("main").getByText("Prod was due Yesterday")).toBeVisible();
+
+  await open(page, "/w/softsora/gk");
+  const card = page.getByRole("listitem").filter({ has: page.getByRole("link", { name: title, exact: true }) });
+  await expect(card.getByText("1 QA bug", { exact: true })).toBeVisible();
+  await expect(card.getByText("Prod was due Yesterday")).toHaveClass(/text-danger/);
+  await expect(page.getByRole("region", { name: "Ready to ship" }).getByText("Prod was due Yesterday")).toBeVisible();
+});
+
 test("ticking a routine item on Today sticks", async ({ page }) => {
   await open(page, "/");
   // which routines show depends on the weekday. Ticking the last item of a routine folds it to "Done", so prefer one with

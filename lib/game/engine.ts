@@ -3,6 +3,7 @@ import { and, eq, gte, inArray, isNull, like, lt, sql } from "drizzle-orm";
 import { db, schema as s } from "@/lib/db/client";
 import { addDays, ymd } from "@/lib/domain/dates";
 import { FINISHED_FOR_ME } from "@/lib/domain/stages";
+import { withClient } from "@/lib/domain/due";
 import { starWeek } from "@/lib/domain/weekly";
 import { balancedWeek, fullStackWeek, inboxZero, tutorkitSteady, type AchievementKey } from "./achievements";
 import { checkAward, fitSmall, GENERAL_DAILY_CAP, routineAward, taskAwards, type Award } from "./xp";
@@ -126,11 +127,11 @@ export async function checkAchievements() {
     const reviewDone = (await db.$count(s.xpEvents, eq(s.xpEvents.key, `r:${week}:review`))) > 0;
     if (reviewDone) {
       const overdue = await db
-        .select({ stage: s.tasks.stage })
+        .select({ stage: s.tasks.stage, type: s.tasks.type })
         .from(s.tasks)
         .innerJoin(s.projects, eq(s.tasks.projectId, s.projects.id))
         .where(and(isNull(s.tasks.closedAt), eq(s.projects.status, "active"), lt(s.tasks.due, week)));
-      if (inboxZero(true, overdue.filter((t) => !FINISHED_FOR_ME.has(t.stage)).length)) earned.push("inbox_zero");
+      if (inboxZero(true, overdue.filter((t) => !FINISHED_FOR_ME.has(t.stage) && !withClient(t)).length)) earned.push("inbox_zero");
     }
   }
 

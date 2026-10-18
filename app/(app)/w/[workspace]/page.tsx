@@ -6,7 +6,8 @@ import { getProjectTasks } from "@/lib/data/tasks";
 import { rowExtras } from "@/lib/data/task";
 import type { Project, Task } from "@/lib/db/schema";
 import { colorVar } from "@/lib/domain/palette";
-import { daysBetween, ymd } from "@/lib/domain/dates";
+import { ymd } from "@/lib/domain/dates";
+import { isOverdue, prodWait } from "@/lib/domain/due";
 import { FINISHED_FOR_ME } from "@/lib/domain/stages";
 import { Area, Stat } from "@/components/dashboard/panel";
 import { AddProject } from "@/components/projects/add-project";
@@ -29,9 +30,10 @@ function tally(p: Project, tasks: Task[], today: string) {
   return {
     open: active.length,
     started: active.filter((t) => t.stage !== "todo").length,
-    overdue: active.filter((t) => t.due != null && t.due < today).length,
+    overdue: active.filter((t) => isOverdue(t, today)).length,
     awaiting: awaiting.length,
-    flagged: awaiting.filter((t) => daysBetween(ymd(t.devReleasedAt!), today) > p.prodWaitDays).length,
+    late: awaiting.filter((t) => prodWait(t, today, p.prodWaitDays).flag === "late").length,
+    long: awaiting.filter((t) => prodWait(t, today, p.prodWaitDays).flag === "long").length,
   };
 }
 
@@ -49,7 +51,7 @@ async function Workspace({ params }: { params: PageProps<"/w/[workspace]">["para
   const extras = await rowExtras(open.map((t) => t.id));
   const tasksOf = (p: Project) => open.filter((t) => t.projectId === p.id);
   const tallies = active.map((p) => tally(p, tasksOf(p), today));
-  const [started, overdue, awaiting, flagged] = (["started", "overdue", "awaiting", "flagged"] as const).map((k) => sum(tallies, k));
+  const [started, overdue, awaiting, late, long] = (["started", "overdue", "awaiting", "late", "long"] as const).map((k) => sum(tallies, k));
 
   return (
     <div className="flex flex-col gap-12" style={{ ["--c" as string]: colorVar(ws.color) }}>
@@ -67,8 +69,9 @@ async function Workspace({ params }: { params: PageProps<"/w/[workspace]">["para
         <Stat
           label="Waiting for production"
           value={awaiting}
-          danger={flagged > 0}
-          note={flagged ? `${flagged} over the wait limit` : awaiting ? "All within the limit" : "All shipped"}
+          danger={late > 0}
+          warn={long > 0}
+          note={late ? `${late} past the client's date` : long ? `${long} over the wait limit` : awaiting ? "All within the limit" : "All shipped"}
         />
       </section>
 
@@ -102,14 +105,17 @@ async function Workspace({ params }: { params: PageProps<"/w/[workspace]">["para
 const chip = "tabular rounded-full border px-2.5 py-0.5";
 
 /** A project's numbers as small chips; only what's worth seeing shows. */
-function Counts({ open, overdue, awaiting, flagged, href }: ReturnType<typeof tally> & { href: string }) {
+function Counts({ open, overdue, awaiting, late, long, href }: ReturnType<typeof tally> & { href: string }) {
   if (!open && !awaiting) return null;
   return (
     <p className="mt-3 flex flex-wrap gap-2 text-xs">
       {open ? <span className={`${chip} border-line text-muted`}>{open} open</span> : null}
       {overdue ? <span className={`${chip} border-danger/50 font-semibold text-danger`}>{overdue} overdue</span> : null}
       {awaiting ? (
-        <Link href={`${href}#awaiting`} className={`${chip} hover:border-ink ${flagged ? "border-danger/50 font-semibold text-danger" : "border-line text-ink"}`}>
+        <Link
+          href={`${href}#awaiting`}
+          className={`${chip} hover:border-ink ${late ? "border-danger/50 font-semibold text-danger" : long ? "border-warn/50 font-semibold text-warn" : "border-line text-ink"}`}
+        >
           {awaiting} waiting for production
         </Link>
       ) : null}

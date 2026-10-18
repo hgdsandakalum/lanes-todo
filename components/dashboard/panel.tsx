@@ -8,7 +8,7 @@ export function Panel({
 }: {
   title: string;
   aside?: React.ReactNode;
-  tone?: "danger";
+  tone?: "danger" | "warn";
   className?: string;
   children: React.ReactNode;
 }) {
@@ -16,7 +16,9 @@ export function Panel({
     <section className={`rounded-sm border border-line bg-surface p-5 ${className}`} aria-label={title}>
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h3 className="shrink-0 font-semibold">{title}</h3>
-        {aside != null ? <span className={`tabular text-sm ${tone === "danger" ? "font-semibold text-danger" : "text-muted"}`}>{aside}</span> : null}
+        {aside != null ? (
+          <span className={`tabular text-sm ${tone === "danger" ? "font-semibold text-danger" : tone === "warn" ? "font-semibold text-warn" : "text-muted"}`}>{aside}</span>
+        ) : null}
       </div>
       {children}
     </section>
@@ -31,6 +33,7 @@ export function Stat({
   note,
   accent = false,
   danger = false,
+  warn = false,
 }: {
   label: string;
   value: React.ReactNode;
@@ -38,12 +41,13 @@ export function Stat({
   note?: React.ReactNode;
   accent?: boolean;
   danger?: boolean;
+  warn?: boolean;
 }) {
   return (
     <div className="rounded-sm border border-line bg-surface px-5 py-4">
       <p className="text-sm text-muted">{label}</p>
       <p className="mt-1 leading-none">
-        <span className={`tabular font-display text-4xl font-extrabold tracking-tight ${accent ? "text-queen" : danger ? "text-danger" : ""}`}>{value}</span>
+        <span className={`tabular font-display text-4xl font-extrabold tracking-tight ${accent ? "text-queen" : danger ? "text-danger" : warn ? "text-warn" : ""}`}>{value}</span>
         {unit ? <span className="tabular text-sm text-muted"> {unit}</span> : null}
       </p>
       {note ? <p className="mt-2 text-xs text-muted">{note}</p> : null}

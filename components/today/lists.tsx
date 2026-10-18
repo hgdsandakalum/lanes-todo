@@ -1,10 +1,12 @@
 import Link from "next/link";
 import type { TodayTask } from "@/lib/data/today";
 import { formatShort } from "@/lib/domain/dates";
+import type { Mark } from "@/lib/domain/due";
 import { stageLabel, type TaskType } from "@/lib/domain/stages";
 import { formatMoney } from "@/lib/domain/subscriptions";
 import { ProjectTag } from "@/components/tasks/project-tag";
 import { CardLink, cardList, TaskCard } from "@/components/tasks/task-card";
+import { toneClass } from "@/components/tasks/due-marks";
 
 /** Open tasks that are overdue or due within the next few days, soonest first; nothing shows when there are none. */
 export function DueSoon({ tasks, today }: { tasks: TodayTask[]; today: string }) {
@@ -39,9 +41,9 @@ export function DueSoon({ tasks, today }: { tasks: TodayTask[]; today: string })
   );
 }
 
-type Waiting = TodayTask & { waited: number; flagged: boolean };
+type Waiting = TodayTask & { waited: number; flagged: boolean; mark: Mark };
 
-/** Code that's dev released but not yet in production, longest wait first; past the project's limit is flagged. Hidden when empty. */
+/** Code that's dev released but not yet in production, longest wait first; a missed prod date or a long wait is flagged. Hidden when empty. */
 export function AwaitingProduction({ tasks }: { tasks: Waiting[] }) {
   if (!tasks.length) return null;
   return (
@@ -58,10 +60,9 @@ export function AwaitingProduction({ tasks }: { tasks: Waiting[] }) {
                 {t.title}
               </CardLink>
             </p>
-            <p className={`tabular mt-1 ${t.flagged ? "text-danger" : "text-muted"}`}>
-              Dev released {t.waited === 0 ? "today" : t.waited === 1 ? "yesterday" : `${t.waited} days ago`}
+            <p className={`tabular mt-1 ${toneClass(t.mark.tone) ?? ""}`}>
+              {t.mark.text}
               {t.stage === "staging" ? ", now in staging" : ""}
-              {t.flagged ? `, over the ${t.prodWaitDays}-day limit` : ""}
             </p>
           </TaskCard>
         ))}

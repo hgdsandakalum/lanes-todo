@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { addDays, formatShort, weekday, ymd } from "@/lib/domain/dates";
+import { isOverdue } from "@/lib/domain/due";
 import { getActivity, getRoutinesFor, getXpSummary } from "@/lib/data/shell";
 import { getToday } from "@/lib/data/today";
 import { getGameSummary } from "@/lib/data/game";
@@ -41,7 +42,7 @@ async function Dashboard() {
     getRoutinesFor(day, weekday(day)).then((r) => r.find((x) => x.key === "review") ?? null),
   ]);
   const dash = await getDashboard(day, { done: starsDone(today.slots), total: today.slots.length });
-  const overdue = today.dueSoon.filter((t) => t.due! < day);
+  const overdue = today.dueSoon.filter((t) => isOverdue(t, day));
   const notInProd = today.awaiting.filter((t) => t.stage === "dev_released" || t.stage === "staging");
   const nextReview = addDays(day, (7 - weekday(day) + REVIEW_DAY) % 7 || 7);
   const loose = overdue.length + dash.stuck.length + dash.uninvoiced.length + notInProd.length;

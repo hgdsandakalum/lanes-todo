@@ -1,9 +1,10 @@
 import type { Project, Task } from "@/lib/db/schema";
-import { formatShort } from "@/lib/domain/dates";
+import { dueMarks } from "@/lib/domain/due";
 import { PriorityMark } from "@/components/tasks/priority";
-import { type Priority, closingStage, codeKind, stagesFor, taskKindLabel, TASK_TYPES, CODE_KINDS, type TaskType } from "@/lib/domain/stages";
+import { type Priority, closingStage, FINISHED_FOR_ME, codeKind, stagesFor, taskKindLabel, TASK_TYPES, CODE_KINDS, type TaskType } from "@/lib/domain/stages";
 import { KindIcon } from "@/components/tasks/kind-icon";
-import { taskHref } from "@/components/tasks/task-row";
+import { taskHref, type RowExtras } from "@/components/tasks/task-row";
+import { DueMarks } from "@/components/tasks/due-marks";
 import Link from "next/link";
 import { BOARD_CLOSED_DAYS } from "@/lib/domain/releases";
 import { StageSelect } from "@/components/tasks/stage-select";
@@ -20,7 +21,7 @@ const inGroup = (t: Task, g: (typeof GROUPS)[number]) => t.type === g.type && co
  * One board per workflow (each code kind, design, general), a column per stage.
  * The closing column holds only the last two weeks.
  */
-export function Boards({ project, tasks, types, today }: { project: Project; tasks: Task[]; types: TaskType[]; today: string }) {
+export function Boards({ project, tasks, types, today, extras = {} }: { project: Project; tasks: Task[]; types: TaskType[]; today: string; extras?: Record<string, RowExtras> }) {
   const shown = GROUPS.filter((g) => types.includes(g.type) && tasks.some((t) => inGroup(t, g)));
   if (shown.length === 0) return <p className="py-6 text-sm text-muted">No tasks here yet. Add one with #{project.code.toLowerCase()} in quick add.</p>;
   return (
@@ -52,7 +53,12 @@ export function Boards({ project, tasks, types, today }: { project: Project; tas
                           </Link>
                           <p className="mt-1 flex flex-wrap gap-x-2.5 gap-y-1 text-xs text-muted">
                             {t.priority ? <PriorityMark priority={t.priority as Priority} /> : null}
-                            {t.due && !closing ? <span className={t.due < today ? "text-danger" : undefined}>Due {formatShort(t.due, today)}</span> : null}
+                            {extras[t.id]?.bugs && FINISHED_FOR_ME.has(t.stage) ? (
+                              <span className="font-semibold text-danger">
+                                {extras[t.id].bugs} QA {extras[t.id].bugs === 1 ? "bug" : "bugs"}
+                              </span>
+                            ) : null}
+                            <DueMarks marks={dueMarks(t, today, { waitDays: project.prodWaitDays, since: extras[t.id]?.since })} />
                             <TaskLinks branch={t.branch} link={t.link} repo={project.repo} shipped={t.closedAt != null} />
                           </p>
                           <StageSelect taskId={t.id} title={t.title} stage={t.stage} stages={stagesFor(type, project.hasStaging, kind)} className="mt-2" />

@@ -15,7 +15,16 @@ export function TaskList({ project, tasks, closed, today, extras = {} }: { proje
       ) : (
         <ul className={`mt-3 ${cardList}`}>
           {shown.map((t) => (
-            <TaskRow key={t.id} color={project.color} task={t} stages={stagesFor(t.type as TaskType, project.hasStaging, t.kind)} repo={project.repo} today={today} {...extras[t.id]} />
+            <TaskRow
+              key={t.id}
+              color={project.color}
+              task={t}
+              stages={stagesFor(t.type as TaskType, project.hasStaging, t.kind)}
+              repo={project.repo}
+              today={today}
+              waitDays={project.prodWaitDays}
+              {...extras[t.id]}
+            />
           ))}
         </ul>
       )}

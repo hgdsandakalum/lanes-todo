@@ -1,12 +1,12 @@
 import Link from "next/link";
 import type { TodayTask } from "@/lib/data/today";
+import type { Mark } from "@/lib/domain/due";
 import { ProjectTag } from "@/components/tasks/project-tag";
+import { toneClass } from "@/components/tasks/due-marks";
 import { aboveCard, CardLink, cardList, TaskCard } from "@/components/tasks/task-card";
 import { Panel } from "./panel";
 
-type Waiting = TodayTask & { waited: number; flagged: boolean };
-
-const ago = (days: number) => (days === 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`);
+type Waiting = TodayTask & { waited: number; flag: "late" | "long" | null; mark: Mark };
 
 /**
  * Code that's finished in dev or staging but not yet in production, closest to production first.
@@ -17,7 +17,8 @@ export function NotInProduction({ tasks }: { tasks: Waiting[] }) {
     { key: "staging", label: "In staging", items: tasks.filter((t) => t.stage === "staging") },
     { key: "dev_released", label: "Dev released", items: tasks.filter((t) => t.stage === "dev_released") },
   ].filter((g) => g.items.length);
-  const flagged = tasks.filter((t) => t.flagged).length;
+  const late = tasks.filter((t) => t.flag === "late").length;
+  const long = tasks.filter((t) => t.flag === "long").length;
   const projects = new Set(tasks.map((t) => t.projectCode)).size;
 
   if (!tasks.length) return null;
@@ -27,7 +28,8 @@ export function NotInProduction({ tasks }: { tasks: Waiting[] }) {
       aside={
         <>
           {tasks.length} in {projects} {projects === 1 ? "project" : "projects"}
-          {flagged ? <span className="font-semibold text-danger"> · {flagged} over the limit</span> : null}
+          {late ? <span className="font-semibold text-danger"> · {late} past the client&apos;s date</span> : null}
+          {long ? <span className="font-semibold text-warn"> · {long} over the limit</span> : null}
         </>
       }
       className="lg:col-span-full"
@@ -49,10 +51,7 @@ export function NotInProduction({ tasks }: { tasks: Waiting[] }) {
                     </CardLink>
                   </p>
                   <p className="mt-1 flex flex-wrap items-baseline justify-between gap-x-3">
-                    <span className={`tabular ${t.flagged ? "text-danger" : "text-muted"}`}>
-                      Dev released {ago(t.waited)}
-                      {t.flagged ? `, over the ${t.prodWaitDays}-day limit` : ""}
-                    </span>
+                    <span className={`tabular ${toneClass(t.mark.tone) ?? ""}`}>{t.mark.text}</span>
                     <Link
                       href={`/w/${t.workspaceSlug}/${t.projectCode.toLowerCase()}#awaiting`}
                       className={`${aboveCard} text-muted underline decoration-line underline-offset-4 hover:text-ink`}

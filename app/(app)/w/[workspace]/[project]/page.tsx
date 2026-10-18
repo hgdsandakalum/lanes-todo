@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { getProjectPage } from "@/lib/data/project";
 import { rowExtras } from "@/lib/data/task";
 import { formatShort, ymd } from "@/lib/domain/dates";
+import { isOverdue, onTime } from "@/lib/domain/due";
 import { FINISHED_FOR_ME, TASK_TYPES, type TaskType } from "@/lib/domain/stages";
 import { Area, Panel, Stat } from "@/components/dashboard/panel";
 import { ProjectHeader } from "@/components/projects/project-header";
@@ -40,8 +41,10 @@ async function ProjectView({ params, searchParams }: Pick<Props, "params" | "sea
   const showCode = type === "all" || type === "code";
   const active = data.open.filter((t) => !FINISHED_FOR_ME.has(t.stage) && t.parentId == null);
   const started = active.filter((t) => t.stage !== "todo").length;
-  const overdue = active.filter((t) => t.due != null && t.due < today).length;
-  const flagged = data.awaiting.filter((t) => t.flagged).length;
+  const overdue = active.filter((t) => isOverdue(t, today)).length;
+  const late = data.awaiting.filter((t) => t.flag === "late").length;
+  const long = data.awaiting.filter((t) => t.flag === "long").length;
+  const kept = onTime(data.released);
   const last = data.releases[0];
   const codeProject = data.open.some((t) => t.type === "code") || data.awaiting.length > 0 || data.releases.length > 0;
 
@@ -59,14 +62,25 @@ async function ProjectView({ params, searchParams }: Pick<Props, "params" | "sea
 
       <section aria-label="Project at a glance" className="-mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Open tasks" value={active.length} note={started ? `${started} in progress` : "None started"} />
-        <Stat label="Overdue" value={overdue} danger={overdue > 0} note={overdue ? "Past their due date" : "Nothing late"} />
-        <Stat label="Waiting for production" value={data.awaiting.length} danger={flagged > 0} note={flagged ? `${flagged} over the ${p.prodWaitDays}-day limit` : `Flags after ${p.prodWaitDays} days`} />
+        <Stat
+          label="Overdue"
+          value={overdue}
+          danger={overdue > 0}
+          note={[overdue ? "Past their due date" : "Nothing late", kept.dated ? `${kept.met} of ${kept.dated} dev released on time` : null].filter(Boolean).join(" · ")}
+        />
+        <Stat
+          label="Waiting for production"
+          value={data.awaiting.length}
+          danger={late > 0}
+          warn={long > 0}
+          note={late ? `${late} past the client's date` : long ? `${long} over the ${p.prodWaitDays}-day limit` : `Flags after ${p.prodWaitDays} days without a prod date`}
+        />
         <Stat label="Releases" value={data.releases.length} note={last ? `Last: ${last.name}, ${formatShort(ymd(last.releasedAt), today)}` : `${data.closedCount} ${data.closedCount === 1 ? "task" : "tasks"} closed`} />
       </section>
 
       <Area id="tasks" title="Tasks" note={<ViewSwitch base={`/w/${ws.slug}/${p.code.toLowerCase()}`} view={view} type={type} counts={counts} />}>
         {view === "board" ? (
-          <Boards project={p} tasks={ofType([...data.open, ...data.recentlyClosed])} types={type === "all" ? TASK_TYPES : [type]} today={today} />
+          <Boards project={p} tasks={ofType([...data.open, ...data.recentlyClosed])} types={type === "all" ? TASK_TYPES : [type]} today={today} extras={extras} />
         ) : (
           <TaskList project={p} tasks={ofType(data.open)} closed={data.closedCount} today={today} extras={extras} />
         )}
@@ -75,10 +89,10 @@ async function ProjectView({ params, searchParams }: Pick<Props, "params" | "sea
       {showCode && codeProject ? (
         <Area id="release" title="Release">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Panel title="Ready to ship" aside={data.awaiting.length ? `${data.awaiting.length} waiting` : undefined} tone={flagged ? "danger" : undefined}>
+            <Panel title="Ready to ship" aside={data.awaiting.length ? `${data.awaiting.length} waiting` : undefined} tone={late ? "danger" : long ? "warn" : undefined}>
               <div id="awaiting" className="scroll-mt-6">
                 {data.awaiting.length ? (
-                  <ShipRelease key={data.awaiting.map((t) => t.id).join()} projectId={p.id} tasks={data.awaiting} today={today} waitDays={p.prodWaitDays} />
+                  <ShipRelease key={data.awaiting.map((t) => t.id).join()} projectId={p.id} tasks={data.awaiting} today={today} />
                 ) : (
                   <p className="text-sm text-muted">Nothing waiting. Code you dev release shows up here, ready to ship to production.</p>
                 )}

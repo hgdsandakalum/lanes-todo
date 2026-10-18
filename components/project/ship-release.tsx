@@ -4,13 +4,13 @@ import { shipRelease } from "@/lib/actions/releases";
 import type { FormState } from "@/lib/actions/tasks";
 import { defaultReleaseName } from "@/lib/domain/releases";
 import { keepValues } from "@/components/projects/keep-values";
+import { toneClass } from "@/components/tasks/due-marks";
+import type { Mark } from "@/lib/domain/due";
 
-type Waiting = { id: string; title: string; stage: string; branch: string | null; waited: number; flagged: boolean; devDay: string };
-
-const ago = (n: number) => (n === 0 ? "today" : n === 1 ? "yesterday" : `${n} days ago`);
+type Waiting = { id: string; title: string; stage: string; branch: string | null; waited: number; devDay: string; mark: Mark };
 
 /** Awaiting production, with a checkbox per task and one button that ships the ticked ones as a release. */
-export function ShipRelease({ projectId, tasks, today, waitDays }: { projectId: string; tasks: Waiting[]; today: string; waitDays: number }) {
+export function ShipRelease({ projectId, tasks, today }: { projectId: string; tasks: Waiting[]; today: string }) {
   const [picked, setPicked] = useState<Set<string>>(() => new Set(tasks.map((t) => t.id)));
   const [day, setDay] = useState(today);
   const [state, action, pending] = useActionState(async (prev: FormState, form: FormData) => {
@@ -53,10 +53,9 @@ export function ShipRelease({ projectId, tasks, today, waitDays }: { projectId: 
               <input type="checkbox" name="taskId" value={t.id} checked={picked.has(t.id)} onChange={() => toggle(t.id)} className="mt-1 size-4 shrink-0 accent-[var(--queen)]" />
               <span className="min-w-0">
                 <span className="block font-medium leading-snug">{t.title}</span>
-                <span className={`tabular block text-sm ${t.flagged ? "text-danger" : "text-muted"}`}>
-                  Dev released {ago(t.waited)}
+                <span className={`tabular block text-sm ${toneClass(t.mark.tone) ?? ""}`}>
+                  {t.mark.text}
                   {t.stage === "staging" ? ", now in staging" : ""}
-                  {t.flagged ? `, over the ${waitDays}-day limit` : ""}
                 </span>
               </span>
             </label>

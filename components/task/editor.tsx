@@ -16,6 +16,7 @@ import {
   KIND_LABEL,
   PRIORITIES,
   PRIORITY_LABEL,
+  shipsToProd,
   stagesFor,
   TYPE_LABEL,
   type CodeKind,
@@ -84,9 +85,14 @@ export function TaskEditor({ task, hasStaging, remindAt, backHref }: { task: Tas
           ))}
         </select>
       </Field>
-      <Field label="Due" id={id("due")}>
+      <Field label="Due" id={id("due")} hint={shipsToProd(type, kind) ? "When it should reach dev. Once dev released, it stops counting as late." : undefined}>
         <input id={id("due")} name="due" type="date" defaultValue={task.due ?? ""} className={inputCls} />
       </Field>
+      {shipsToProd(type, kind) ? (
+        <Field label="Prod date" id={id("prodDate")} hint="The release date the client gives after their QA. Leave empty until then.">
+          <input id={id("prodDate")} name="prodDate" type="date" defaultValue={task.prodDate ?? ""} className={inputCls} />
+        </Field>
+      ) : null}
       <Field label="Estimate" id={id("estimate")} hint="30m, 2h or 1h30m">
         <input id={id("estimate")} name="estimate" defaultValue={task.estimateMin ? formatMinutes(task.estimateMin).replace(" ", "") : ""} placeholder="2h" className={`tabular ${inputCls}`} />
       </Field>

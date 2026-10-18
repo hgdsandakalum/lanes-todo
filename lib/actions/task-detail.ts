@@ -63,13 +63,13 @@ export async function deleteChecklistItem(itemId: string) {
 
 // ---- subtasks
 
-/** Adds a subtask from a quick-add line; it lives in the parent's project unless the line names another. */
-export async function addSubtask(parentId: string, text: string): Promise<FormState> {
+/** Adds a subtask from a quick-add line; it lives in the parent's project unless the line names another. A QA bug is a bug fix unless the line says otherwise. */
+export async function addSubtask(parentId: string, text: string, qa = false): Promise<FormState> {
   await requireSession();
   const [parent] = await db.select().from(s.tasks).where(eq(s.tasks.id, parentId)).limit(1);
   if (!parent) return { error: "That task doesn't exist any more." };
   if (parent.parentId) return { error: "Subtasks can't have subtasks of their own. Add a checklist instead." };
-  const added = await addTask({ text, fallbackProjectId: parent.projectId, parentId });
+  const added = await addTask({ text, fallbackProjectId: parent.projectId, parentId, kind: qa ? "bug" : undefined });
   if (!added.ok) return { error: added.error };
   refresh();
   return { saved: Date.now() };

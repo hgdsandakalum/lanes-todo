@@ -175,12 +175,29 @@ function CheckRow({ item }: { item: ChecklistItem }) {
 
 type Sub = { id: string; title: string; type: string; kind: string | null; stage: string };
 
-export function Subtasks({ taskId, subtasks, stagesOf, canHave }: { taskId: string; subtasks: Sub[]; stagesOf: Record<string, Stage[]>; canHave: boolean }) {
+/** A task's subtasks. Once it's dev released (`qa`), bugs QA reports are added here too, as bug fixes. */
+export function Subtasks({
+  taskId,
+  subtasks,
+  stagesOf,
+  canHave,
+  qa = false,
+}: {
+  taskId: string;
+  subtasks: Sub[];
+  stagesOf: Record<string, Stage[]>;
+  canHave: boolean;
+  qa?: boolean;
+}) {
   const done = subtasks.filter((t) => FINISHED_FOR_ME.has(t.stage)).length;
+  const bugs = subtasks.filter((t) => t.type === "code" && t.kind === "bug" && !FINISHED_FOR_ME.has(t.stage)).length;
   if (!canHave) return null;
   return (
     <section aria-labelledby="subtasks">
-      <Heading id="subtasks" aside={subtasks.length ? `${done} of ${subtasks.length}` : undefined}>
+      <Heading
+        id="subtasks"
+        aside={qa && bugs ? `${bugs} QA ${bugs === 1 ? "bug" : "bugs"} to fix · ${done} of ${subtasks.length}` : subtasks.length ? `${done} of ${subtasks.length}` : undefined}
+      >
         Subtasks
       </Heading>
       {subtasks.length ? (
@@ -196,6 +213,7 @@ export function Subtasks({ taskId, subtasks, stagesOf, canHave }: { taskId: stri
           ))}
         </ul>
       ) : null}
+      {qa ? <AddLine label="New QA bug" placeholder="Add a bug QA found" submit={(t) => addSubtask(taskId, t, true)} /> : null}
       <AddLine label="New subtask" placeholder="Add a subtask (quick-add shortcuts work)" submit={(t) => addSubtask(taskId, t)} />
     </section>
   );

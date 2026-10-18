@@ -1,19 +1,26 @@
-import { formatShort } from "@/lib/domain/dates";
+import { dueMarks } from "@/lib/domain/due";
 import { formatMinutes } from "@/lib/domain/estimate";
 import { describeRecur } from "@/lib/domain/recur";
-import { taskKindLabel, type Priority, type Stage, type TaskType } from "@/lib/domain/stages";
+import { FINISHED_FOR_ME, taskKindLabel, type Priority, type Stage, type TaskType } from "@/lib/domain/stages";
 import type { Task } from "@/lib/db/schema";
 import { LabelChip } from "@/components/task/sections";
 import { KindIcon } from "./kind-icon";
 import { aboveCard, CardLink, TaskCard } from "./task-card";
+import { DueMarks } from "./due-marks";
 import { TaskMarkdown } from "./markdown";
 import { PriorityMark } from "./priority";
 import { StageSelect } from "./stage-select";
 import { TaskLinks } from "./task-links";
 
-export type RowExtras = { labels?: { name: string; color: string }[]; progress?: { done: number; total: number }; blocked?: boolean };
+export type RowExtras = {
+  labels?: { name: string; color: string }[];
+  progress?: { done: number; total: number };
+  bugs?: number; // bug subtasks still to fix
+  blocked?: boolean;
+  since?: Date | null; // when design work was sent for feedback
+};
 
-type Props = { task: Task; stages: Stage[]; repo: string | null; today: string; color?: string } & RowExtras;
+type Props = { task: Task; stages: Stage[]; repo: string | null; today: string; waitDays: number; color?: string } & RowExtras;
 
 export { taskHref } from "./task-card";
 
@@ -21,9 +28,10 @@ export { taskHref } from "./task-card";
  * A task in a list, as a card edged in its project's colour: kind, title, what matters at a glance, and its stage.
  * The whole card opens the task; the stage, links and notes inside it stay clickable on their own.
  */
-export function TaskRow({ task, stages, repo, today, color, labels = [], progress, blocked = false }: Props) {
+export function TaskRow({ task, stages, repo, today, waitDays, color, labels = [], progress, bugs = 0, blocked = false, since }: Props) {
   const type = task.type as TaskType;
-  const overdue = task.due != null && task.due < today;
+  // once dev released, bugs QA reports are added as subtasks; they are the work left for you
+  const qa = bugs > 0 && FINISHED_FOR_ME.has(task.stage);
 
   return (
     <TaskCard color={color}>
@@ -37,11 +45,12 @@ export function TaskRow({ task, stages, repo, today, color, labels = [], progres
             <span>{taskKindLabel(type, task.kind)}</span>
             {task.priority ? <PriorityMark priority={task.priority as Priority} withLabel /> : null}
             {blocked || task.blocker ? <span className="font-medium text-danger">Blocked</span> : null}
-            {task.due ? (
-              <span className={overdue ? "text-danger" : undefined}>
-                {overdue ? "Was due" : "Due"} {formatShort(task.due, today)}
+            {qa ? (
+              <span className="font-semibold text-danger">
+                {bugs} QA {bugs === 1 ? "bug" : "bugs"}
               </span>
             ) : null}
+            <DueMarks marks={dueMarks(task, today, { waitDays, since })} />
             {progress && progress.total ? (
               <span className="tabular" title="Subtasks and checklist items done">
                 {progress.done}/{progress.total}

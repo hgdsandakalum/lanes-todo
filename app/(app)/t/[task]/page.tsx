@@ -2,12 +2,14 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { getTaskPage } from "@/lib/data/task";
-import { formatShort, localInput, ymd } from "@/lib/domain/dates";
+import { getTaskPage, rowExtras } from "@/lib/data/task";
+import { localInput, ymd } from "@/lib/domain/dates";
+import { dueMarks } from "@/lib/domain/due";
 import { formatMinutes } from "@/lib/domain/estimate";
 import { editorUrl } from "@/lib/domain/folders";
 import { describeRecur } from "@/lib/domain/recur";
-import { codeKind, FIELD_LABEL, FINISHED_FOR_ME, KIND_FIELDS, stagesFor, taskKindLabel, type Priority, type TaskType } from "@/lib/domain/stages";
+import { codeKind, FIELD_LABEL, FINISHED_FOR_ME, KIND_FIELDS, shipsToProd, stagesFor, taskKindLabel, type Priority, type TaskType } from "@/lib/domain/stages";
+import { DueMarks } from "@/components/tasks/due-marks";
 import { KindIcon } from "@/components/tasks/kind-icon";
 import { TaskMarkdown } from "@/components/tasks/markdown";
 import { ProjectTag } from "@/components/tasks/project-tag";
@@ -40,6 +42,8 @@ async function TaskView({ params }: { params: PageProps<"/t/[task]">["params"] }
   const context = (kind ? KIND_FIELDS[kind] : []).filter((f) => t[f]);
   const finished = FINISHED_FOR_ME.has(t.stage);
   const waitingOn = data.blockedBy.filter((d) => !FINISHED_FOR_ME.has(d.stage));
+  const { since } = (await rowExtras([t.id]))[t.id];
+  const qa = type === "code" && finished && shipsToProd(type, t.kind) && t.closedAt == null;
 
   return (
     <div className="flex flex-col gap-10">
@@ -72,7 +76,7 @@ async function TaskView({ params }: { params: PageProps<"/t/[task]">["params"] }
           <ProjectTag code={p.code} color={p.color} title={p.name} />
           <span>{taskKindLabel(type, t.kind)}</span>
           {t.priority ? <PriorityMark priority={t.priority as Priority} withLabel /> : null}
-          {t.due ? <span className={t.due < today && !finished ? "text-danger" : undefined}>Due {formatShort(t.due, today)}</span> : null}
+          <DueMarks marks={dueMarks(t, today, { waitDays: p.prodWaitDays, since })} />
           {t.estimateMin ? <span className="tabular">Estimate {formatMinutes(t.estimateMin)}</span> : null}
           {t.recur ? <span>{describeRecur(t.recur)}</span> : null}
           {t.remindAt ? <span title="Reminders arrive on your phone once Lanes is deployed">Reminder {localInput(t.remindAt).replace("T", " ")}</span> : null}
@@ -116,6 +120,7 @@ async function TaskView({ params }: { params: PageProps<"/t/[task]">["params"] }
             subtasks={data.subtasks}
             stagesOf={Object.fromEntries(data.subtasks.map((st) => [st.id, stagesFor(st.type as TaskType, p.hasStaging, st.kind)]))}
             canHave={t.parentId == null}
+            qa={qa}
           />
           <References taskId={t.id} refs={data.refs} repo={p.repo} />
           <details className="group border-t border-line pt-5">

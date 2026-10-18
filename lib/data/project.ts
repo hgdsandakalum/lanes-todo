@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import { db, schema as s } from "@/lib/db/client";
 import { requireSession } from "@/lib/auth/session";
 import { addDays, daysBetween, ymd } from "@/lib/domain/dates";
+import { prodWait, waitingMark } from "@/lib/domain/due";
 import { BOARD_CLOSED_DAYS } from "@/lib/domain/releases";
 
 /**
@@ -21,7 +22,7 @@ export async function getProjectPage(slug: string, code: string, day: string) {
   const { project } = row;
 
   const closedSince = new Date(Date.parse(`${addDays(day, -BOARD_CLOSED_DAYS)}T00:00:00Z`) - 864e5);
-  const [tasks, closedCount, releases] = await Promise.all([
+  const [tasks, closedCount, releases, released] = await Promise.all([
     db
       .select()
       .from(s.tasks)
@@ -29,6 +30,11 @@ export async function getProjectPage(slug: string, code: string, day: string) {
       .orderBy(asc(s.tasks.sort), asc(s.tasks.createdAt)),
     db.$count(s.tasks, and(eq(s.tasks.projectId, project.id), sql`${s.tasks.closedAt} is not null`)),
     db.select().from(s.releases).where(eq(s.releases.projectId, project.id)).orderBy(desc(s.releases.releasedAt)).limit(20),
+    // code dev released in the last 90 days, for the on-time record
+    db
+      .select({ due: s.tasks.due, devReleasedAt: s.tasks.devReleasedAt })
+      .from(s.tasks)
+      .where(and(eq(s.tasks.projectId, project.id), gte(s.tasks.devReleasedAt, new Date(Date.now() - 90 * 864e5)))),
   ]);
 
   const shipped = releases.length
@@ -42,11 +48,7 @@ export async function getProjectPage(slug: string, code: string, day: string) {
   const recentlyClosed = tasks.filter((t) => t.closedAt != null && daysBetween(ymd(t.closedAt), day) <= BOARD_CLOSED_DAYS);
   const awaiting = open
     .filter((t) => t.type === "code" && t.devReleasedAt != null)
-    .map((t) => {
-      const devDay = ymd(t.devReleasedAt!);
-      const waited = daysBetween(devDay, day);
-      return { ...t, devDay, waited, flagged: waited > project.prodWaitDays };
-    })
+    .map((t) => ({ ...t, ...prodWait(t, day, project.prodWaitDays), mark: waitingMark(t, day, project.prodWaitDays) }))
     .sort((a, b) => b.waited - a.waited);
 
   return {
@@ -55,6 +57,7 @@ export async function getProjectPage(slug: string, code: string, day: string) {
     recentlyClosed,
     closedCount,
     awaiting,
+    released,
     releases: releases.map((r) => ({ ...r, tasks: shipped.filter((t) => t.releaseId === r.id) })),
   };
 }

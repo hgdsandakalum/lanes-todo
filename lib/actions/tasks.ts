@@ -8,7 +8,19 @@ import { parseDuration } from "@/lib/domain/estimate";
 import { ruleFrom } from "@/lib/domain/recur";
 import { DESCRIPTION_MAX, TITLE_MAX } from "@/lib/domain/quick-add";
 import { parseBranches, safeHttpUrl } from "@/lib/domain/repo";
-import { CODE_KINDS, KIND_FIELDS, PRIORITIES, codeKind, stageDates, stagesFor, TASK_TYPES, type CodeKind, type ContextField, type TaskType } from "@/lib/domain/stages";
+import {
+  CODE_KINDS,
+  KIND_FIELDS,
+  PRIORITIES,
+  codeKind,
+  shipsToProd,
+  stageDates,
+  stagesFor,
+  TASK_TYPES,
+  type CodeKind,
+  type ContextField,
+  type TaskType,
+} from "@/lib/domain/stages";
 import { reconcileTask } from "@/lib/game/engine";
 import { addTask, moveTask, taskWithProject } from "@/lib/tasks/core";
 
@@ -47,6 +59,7 @@ export async function updateTask(_: FormState, form: FormData): Promise<FormStat
   const description = field(form, "description");
   const type = field(form, "type") as TaskType;
   const due = field(form, "due");
+  const prodDate = field(form, "prodDate");
   const ticket = field(form, "ticket");
   const branches = parseBranches(field(form, "branch"));
   const link = field(form, "link");
@@ -68,6 +81,7 @@ export async function updateTask(_: FormState, form: FormData): Promise<FormStat
   if (description.length > DESCRIPTION_MAX) return { error: `Keep the description under ${DESCRIPTION_MAX.toLocaleString("en")} characters.` };
   if (!TASK_TYPES.includes(type)) return { error: "Pick Code, Design or General." };
   if (due && !isYmd(due)) return { error: "The due date isn't a real date." };
+  if (prodDate && !isYmd(prodDate)) return { error: "The prod date isn't a real date." };
   if (ticket.length > 50) return { error: "Keep the ticket ID under 50 characters." };
   if (type === "code" && !branches.ok) return { error: branches.error };
   if (kindInput && !CODE_KINDS.includes(kindInput as CodeKind)) return { error: "Pick a kind of code work." };
@@ -105,6 +119,7 @@ export async function updateTask(_: FormState, form: FormData): Promise<FormStat
       expected: fields.includes("expected") ? context.expected || null : null,
       actual: fields.includes("actual") ? context.actual || null : null,
       due: due || null,
+      prodDate: shipsToProd(type, kind) ? prodDate || null : null,
       // fields that belong to another type are cleared, so they can't resurface on a type switch back
       ticket: type === "code" ? ticket || null : null,
       branch: type === "code" && branches.ok ? branches.branches.join(" ") || null : null,

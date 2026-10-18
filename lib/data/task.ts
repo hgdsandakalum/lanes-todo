@@ -1,7 +1,9 @@
 import "server-only";
-import { and, asc, eq, inArray, isNull, ne, or } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, max, ne, or } from "drizzle-orm";
 import { db, schema as s } from "@/lib/db/client";
 import { requireSession } from "@/lib/auth/session";
+import { FINISHED_FOR_ME } from "@/lib/domain/stages";
+import type { RowExtras } from "@/components/tasks/task-row";
 
 /** One task's page: the task, its project and workspace, and everything hung on it. */
 export async function getTaskPage(taskId: string) {
@@ -78,11 +80,14 @@ export async function labelsFor(taskIds: string[]) {
   return out;
 }
 
-/** Subtask and checklist progress per task, for rows: done / total. */
+/** Subtask and checklist progress per task, for rows: done / total, and bug subtasks still to fix (QA's finds, once the task is dev released). */
 export async function progressFor(taskIds: string[]) {
-  if (taskIds.length === 0) return {} as Record<string, { done: number; total: number }>;
+  if (taskIds.length === 0) return { progress: {} as Record<string, { done: number; total: number }>, bugs: {} as Record<string, number> };
   const [subs, items] = await Promise.all([
-    db.select({ parentId: s.tasks.parentId, closedAt: s.tasks.closedAt, devReleasedAt: s.tasks.devReleasedAt }).from(s.tasks).where(inArray(s.tasks.parentId, taskIds)),
+    db
+      .select({ parentId: s.tasks.parentId, type: s.tasks.type, kind: s.tasks.kind, stage: s.tasks.stage, closedAt: s.tasks.closedAt, devReleasedAt: s.tasks.devReleasedAt })
+      .from(s.tasks)
+      .where(inArray(s.tasks.parentId, taskIds)),
     db.select({ taskId: s.checklistItems.taskId, doneAt: s.checklistItems.doneAt }).from(s.checklistItems).where(inArray(s.checklistItems.taskId, taskIds)),
   ]);
   const out: Record<string, { done: number; total: number }> = {};
@@ -91,14 +96,18 @@ export async function progressFor(taskIds: string[]) {
     p.total++;
     if (done) p.done++;
   };
-  for (const t of subs) bump(t.parentId!, t.closedAt != null || t.devReleasedAt != null);
+  const bugs: Record<string, number> = {};
+  for (const t of subs) {
+    bump(t.parentId!, t.closedAt != null || t.devReleasedAt != null);
+    if (t.type === "code" && t.kind === "bug" && t.closedAt == null && !FINISHED_FOR_ME.has(t.stage)) bugs[t.parentId!] = (bugs[t.parentId!] ?? 0) + 1;
+  }
   for (const i of items) bump(i.taskId, i.doneAt != null);
-  return out;
+  return { progress: out, bugs };
 }
 
-/** Labels, progress and blocked state for rows. */
+/** Labels, progress, open bug subtasks, blocked state and when work went to the client (design feedback), for rows and board cards. */
 export async function rowExtras(taskIds: string[]) {
-  const [labels, progress, waits] = await Promise.all([
+  const [labels, { progress, bugs }, waits, sent] = await Promise.all([
     labelsFor(taskIds),
     progressFor(taskIds),
     taskIds.length
@@ -108,7 +117,17 @@ export async function rowExtras(taskIds: string[]) {
           .innerJoin(s.tasks, eq(s.taskDeps.dependsOnId, s.tasks.id))
           .where(and(inArray(s.taskDeps.taskId, taskIds), isNull(s.tasks.closedAt), isNull(s.tasks.devReleasedAt)))
       : Promise.resolve([]),
+    taskIds.length
+      ? db
+          .select({ taskId: s.stageEvents.taskId, at: max(s.stageEvents.at) })
+          .from(s.stageEvents)
+          .where(and(inArray(s.stageEvents.taskId, taskIds), eq(s.stageEvents.toStage, "feedback")))
+          .groupBy(s.stageEvents.taskId)
+      : Promise.resolve([]),
   ]);
   const blocked = new Set(waits.map((w) => w.taskId));
-  return Object.fromEntries(taskIds.map((id) => [id, { labels: labels[id], progress: progress[id], blocked: blocked.has(id) }]));
+  const since = new Map(sent.map((e) => [e.taskId, e.at]));
+  return Object.fromEntries(
+    taskIds.map((id) => [id, { labels: labels[id], progress: progress[id], bugs: bugs[id] ?? 0, blocked: blocked.has(id), since: since.get(id) ?? null }]),
+  ) as Record<string, RowExtras>;
 }
