@@ -1,0 +1,17 @@
+import type { Metadata } from "next";
+import { QueenMedallion } from "@/components/board/queen";
+import { LoginForm } from "./login-form";
+
+export const metadata: Metadata = { title: "Sign in" };
+
+export default function LoginPage() {
+  return (
+    <main className="grid min-h-dvh place-items-center bg-rail px-4 py-[max(1.5rem,env(safe-area-inset-top))]">
+      <div className="w-full max-w-sm rounded-3xl bg-bg p-8 border border-rail-line">
+        <QueenMedallion filled className="mb-6 size-16" />
+        <h1 className="mb-8 font-display text-5xl font-extrabold tracking-tight">Lanes</h1>
+        <LoginForm />
+      </div>
+    </main>
+  );
+}

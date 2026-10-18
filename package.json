@@ -1,0 +1,44 @@
+{
+  "name": "lanes",
+  "version": "0.1.0",
+  "private": true,
+  "bin": {
+    "lanes": "bin/lanes.mjs"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx --env-file=.env.local lib/db/seed.ts",
+    "db:setup": "npm run db:push && npm run db:seed",
+    "db:studio": "drizzle-kit studio",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test lib/**/*.test.ts",
+    "xp:rebuild": "tsx --env-file=.env.local lib/db/rebuild-xp.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@libsql/client": "^0.18.0",
+    "drizzle-orm": "^0.45.4",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.0",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "^5"
+  }
+}

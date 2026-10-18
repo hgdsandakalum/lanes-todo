@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ground:#F3F1EA;--ink:#1D2B22;--muted:#56645A;--line:#D6D2C4;--track:#B5482E;--ss:#1F4FB8;--tk:#1E8A3C;--fl:#D2361F;--ad:#F0B400}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;font-family:"IBM Plex Sans",sans-serif;color:var(--ink);background:var(--ground)}
+header{display:flex;align-items:center;gap:32px;padding:18px 40px;background:var(--ink);color:#F3F1EA}
+header b{font:800 24px "Bricolage Grotesque"}
+header nav{display:flex;gap:6px}header nav a{color:#C9D2CB;text-decoration:none;padding:8px 14px;border-radius:8px;font-weight:500}
+header nav a.on{background:#2E4135;color:#fff}
+.lvl{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:14px}
+.lvl i{display:block;width:180px;height:8px;border-radius:4px;background:#2E4135;overflow:hidden}.lvl i:after{content:"";display:block;height:100%;width:34%;background:var(--ad)}
+.wrap{padding:28px 40px;display:grid;grid-template-columns:1fr 400px;gap:28px}
+h1{font:800 46px/1 "Bricolage Grotesque";letter-spacing:-.02em}.date{color:var(--muted);margin:6px 0 22px}
+.lanes{background:var(--track);border-radius:16px;padding:18px 0}
+.ln{display:grid;grid-template-columns:140px 1fr 90px;align-items:center;height:62px;border-top:2px solid rgba(255,255,255,.75)}
+.ln:last-child{border-bottom:2px solid rgba(255,255,255,.75)}
+.ln b{font:800 16px "Bricolage Grotesque";color:#fff;padding-left:20px;display:flex;gap:8px;align-items:center}
+.ln b i{width:14px;height:14px;border-radius:3px;background:var(--c)}
+.run{position:relative;height:100%}.run span{position:absolute;top:50%;transform:translate(-50%,-50%);left:var(--p);
+background:var(--c);color:#fff;font-weight:600;font-size:13px;padding:6px 12px;border-radius:20px;box-shadow:0 0 0 3px #fff}
+.ln em{font-style:normal;color:#fff;font-weight:600;text-align:right;padding-right:20px;font-variant-numeric:tabular-nums}
+.deep{margin-top:22px;background:#fff;border:1px solid var(--line);border-left:10px solid var(--ss);border-radius:14px;padding:20px 24px;display:flex;align-items:center;gap:20px}
+.deep small{color:var(--muted);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}.deep h2{font:800 26px "Bricolage Grotesque";margin-top:4px}
+.deep button{margin-left:auto;background:var(--ink);color:#fff;border:0;border-radius:10px;padding:12px 18px;font:600 15px "IBM Plex Sans"}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:20px}
+.card h3{font:800 18px "Bricolage Grotesque";margin-bottom:12px;display:flex;justify-content:space-between}.card h3 span{font:500 13px "IBM Plex Sans";color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:8px 4px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-weight:500;font-size:12px}
+td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px}
+.prog li{list-style:none;display:flex;gap:10px;padding:6px 0;font-size:14px}.prog li i{width:16px;height:16px;border:2px solid var(--muted);border-radius:4px;flex:none}
+.tag{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+</style></head><body>
+<header><b>Lanes</b><nav><a class="on">Dashboard</a><a>SoftSora</a><a>TutorKit</a><a>Freelance</a><a>Admin &amp; sales</a></nav>
+<div class="lvl">Level 1 · Intern <i></i> 34 / 100</div></header>
+<div class="wrap">
+  <div>
+    <h1>Tuesday</h1><div class="date">13 October 2026 · <span class="tag">sample data</span></div>
+    <div class="lanes">
+      <div class="ln" style="--c:var(--ss)"><b><i></i>SoftSora</b><div class="run"><span style="--p:62%">3 done</span></div><em>120 pts</em></div>
+      <div class="ln" style="--c:var(--tk)"><b><i></i>TutorKit</b><div class="run"><span style="--p:20%">1 done</span></div><em>40 pts</em></div>
+      <div class="ln" style="--c:var(--fl)"><b><i></i>Freelance</b><div class="run"><span style="--p:41%">2 done</span></div><em>70 pts</em></div>
+      <div class="ln" style="--c:var(--ad)"><b><i></i>Admin</b><div class="run"><span style="--p:10%;color:#1D2B22">0</span></div><em>10 pts</em></div>
+    </div>
+    <div class="deep"><div><small>Today's deep task</small><h2>Ship lesson builder autosave</h2></div><button>Mark dev released</button></div>
+  </div>
+  <div>
+    <div class="card"><h3>Points board <span>this week</span></h3>
+      <table><tr><th>House</th><th>Starred</th><th>Moved</th><th style="text-align:right">Points</th></tr>
+      <tr><td><span class="sw" style="background:var(--ss)"></span>SoftSora</td><td>1 / 1</td><td>5</td><td class="n">120</td></tr>
+      <tr><td><span class="sw" style="background:var(--fl)"></span>Freelance</td><td>0 / 1</td><td>3</td><td class="n">70</td></tr>
+      <tr><td><span class="sw" style="background:var(--tk)"></span>TutorKit</td><td>0 / 1</td><td>1</td><td class="n">40</td></tr>
+      <tr><td><span class="sw" style="background:var(--ad)"></span>Admin</td><td>–</td><td>1</td><td class="n">10</td></tr></table></div>
+    <div class="card"><h3>Today's programme <span>PM sweep · 3 / 7</span></h3>
+      <ul class="prog"><li><i></i>Unblock anyone who is stuck first</li><li><i></i>Clear pending code reviews (Gaku, Otasuke)</li><li><i></i>Scan overnight messages and tickets</li><li><i></i>Nudge tickets awaiting production</li></ul></div>
+  </div>
+</div>
+</body></html>

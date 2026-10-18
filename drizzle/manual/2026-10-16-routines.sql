@@ -1,0 +1,6 @@
+-- Routines: the PM sweep becomes the Morning sweep (five steps, four with live counts), and the
+-- Admin slot and Weekly review get live counts on their money and production items. Data only, no schema change.
+-- Run once; it replaces those three routines' items, so skip it if you've already edited them on the Routines page.
+UPDATE routines SET title = 'Morning sweep', items = '[{"text":"Unblock others and clear code reviews","signal":"reviews"},{"text":"Scan messages and tickets; capture new work with quick add"},{"text":"Nudge what''s not in production","signal":"production"},{"text":"Flag what''s due today or tomorrow","signal":"due"},{"text":"Pick today''s deep task","signal":"deep"}]' WHERE key = 'sweep';
+UPDATE routines SET items = '[{"text":"Invoice anything delivered this week","signal":"invoice"},"Follow up on pending quotations","Overflow and catch-up"]' WHERE key = 'admin';
+UPDATE routines SET items = '["Empty your head into quick add","Give every task a project and a type","Walk the workspaces: SoftSora, TutorKit, Freelance, Admin",{"text":"Check the money: delivered but not invoiced, unpaid invoices","signal":"invoice"},"Every pending quote has a follow-up date",{"text":"Check what''s not in production: anything stuck?","signal":"production"},"Star three: one each from SoftSora, TutorKit, Freelance"]' WHERE key = 'review';

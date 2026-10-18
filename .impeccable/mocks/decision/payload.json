@@ -1,0 +1,126 @@
+{
+  "title": "Choose the visual world for Lanes",
+  "question": "The roll assigned the Carrom Board. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Carrom Board",
+      "kicker": "THE ROLL",
+      "lineage": "The lacquered carrom board found in nearly every Sri Lankan home",
+      "thesis": "Home is the board: four workspaces sit on four sides, and today's deep task is the red queen in the centre.",
+      "palette": ["#E7CF9D", "#2A1911", "#C4261D", "#15110D", "#F4E8CC"],
+      "materials": ["birch lacquer playing field", "ebony frame rail", "double-ruled baselines ending in red rings"],
+      "viewport": "A dark frame rail on the left holds the level bar and nav. The birch field centres on a queen medallion holding today's deep task. Each workspace runs as a double-ruled baseline with its open projects as coins, ringed in that workspace's colour.",
+      "risk": "If the rosette and rings take over, it turns into a game board costume. They must stay as the one signature move on a plain, standard dashboard.",
+      "raised": [
+        { "from": "challenger-emission-rail", "raise": "Stage state is shown by line form, not colour: solid for live, dashed for waiting, half-height for stale. Colour stays reserved for workspaces." },
+        { "from": "challenger-saville-sleeve", "raise": "Codes come first. Every project and task leads with its handle (GK, L-50), set in tabular figures, so the catalogue scans by code." },
+        { "from": "challenger-zoo-map", "raise": "Workspace colour owns whole regions (each baseline band and its header field), not 8px dots." },
+        { "from": "challenger-video-feed", "raise": "On a phone, the queen (today's deep task) owns the first screen on its own. Everything else is one scroll below." }
+      ],
+      "html": ".impeccable/mocks/decision/assigned.html"
+    },
+    {
+      "id": "model-pick",
+      "label": "House Sports Meet",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "Sri Lankan school sports meets: house colours, track lanes, the points board",
+      "thesis": "Each workspace is a school house running in its own lane, and the week is scored on the house points board.",
+      "palette": ["#F3F1EA", "#1D2B22", "#D2361F", "#1F4FB8", "#1E8A3C", "#F0B400"],
+      "materials": ["chalk-lined track lanes", "painted points board", "bunting in house colours"],
+      "viewport": "A top bar sets the four houses as lanes with progress along each. Under it sits a points board table for the week, then today's routine as the event programme.",
+      "risk": "The most literal reading of the name 'Lanes'. It's familiar, and the bunting could tip it into school-poster territory.",
+      "html": ".impeccable/mocks/decision/model-pick.html"
+    },
+    {
+      "id": "challenger-acetate-manual",
+      "label": "Tabbed Reference Manual",
+      "verdict": "competitive",
+      "lineage": "Boxed-software manuals with coloured section dividers",
+      "thesis": "Each workspace is a full-strength divider board, and the tab rail down the edge is the nav, sized by how much each one holds.",
+      "palette": ["#D9612A", "#E8B417", "#3C8C3A", "#1D7F86", "#2C44B0", "#F2EFE6"],
+      "materials": ["milk acetate leaves", "full-hue divider boards", "stepped fore-edge tabs"],
+      "viewport": "A stepped tab rail on the right, one tab per workspace. The open workspace's hue fills the board behind translucent panels for the deep task, routine and progress.",
+      "case": "It fuses cleanly. The section hues map exactly to workspace colours and the tab rail is a clear nav, but you have no personal connection to boxed manuals.",
+      "risk": "Full-hue boards are loud on a page you open every morning, which strains the 'quiet by default' rule.",
+      "html": ".impeccable/mocks/decision/challenger-acetate-manual.html"
+    },
+    {
+      "id": "challenger-warm-app",
+      "label": "Warm Consumer App",
+      "verdict": "competitive",
+      "lineage": "Friendly consumer apps with a thumb-reachable bottom bar",
+      "thesis": "Soft cards on a warm ground, and the one bright colour on screen is always something you can press.",
+      "palette": ["#F4EEE6", "#FFFFFF", "#2A2622", "#E2552B"],
+      "materials": ["soft-radius cards", "persistent bottom bar", "spring press feedback"],
+      "viewport": "A single card column with the deep task card first, then routine and progress. A bottom bar on the phone, a slim rail on the laptop.",
+      "case": "Very clear, and the bottom bar fixes mobile navigation, but it says nothing about how your work actually runs.",
+      "risk": "It's close to the category default, so Lanes would look like any habit app.",
+      "html": ".impeccable/mocks/decision/challenger-warm-app.html"
+    },
+    {
+      "id": "challenger-emission-rail",
+      "label": "Emission-line Rail",
+      "verdict": "declined",
+      "lineage": "Spectrogram plates",
+      "palette": ["#2B2C2E", "#E6E0D2", "#F2C230"],
+      "materials": ["charcoal continuum", "hairline emission lines"],
+      "thesis": "Every element registers against one rail, and state is shown by line form.",
+      "viewport": "One off-centre rail with each destination as a tick.",
+      "risk": "Cold and lab-like for a personal tracker.",
+      "case": "Loses on both axes: it isn't from your world, and a single rail hides the four workspaces.",
+      "kept": "State shown by line form (solid, dashed, half-height), not by hue."
+    },
+    {
+      "id": "challenger-saville-sleeve",
+      "label": "Factory Catalog Sleeve",
+      "verdict": "declined",
+      "lineage": "Factory Records catalogue identity",
+      "palette": ["#0E0E0E", "#F2F2F2", "#E23B2E", "#2E7BD6"],
+      "materials": ["matte black", "white hairline plots", "colour-coded strips"],
+      "thesis": "Every item has a catalogue number, and colour codes stand in for words.",
+      "viewport": "A fac-numbered index on matte black.",
+      "risk": "Hiding names behind codes hurts quick scanning.",
+      "case": "Loses on both axes: replacing words with codes hurts clarity.",
+      "kept": "Every project and task leads with its code (GK, L-50)."
+    },
+    {
+      "id": "challenger-zoo-map",
+      "label": "Zoo Guide Map",
+      "verdict": "declined",
+      "lineage": "Flat-colour park guide maps",
+      "palette": ["#8ED462", "#F5F1E4", "#2C2E2A", "#FF705D"],
+      "materials": ["flat colour lobes", "capsule labels"],
+      "thesis": "Every area is a swelling lobe of flat colour.",
+      "viewport": "One lobe dominates each screen.",
+      "risk": "Organic lobes fight a dense working screen.",
+      "case": "Loses on both axes: playful lobes hide state.",
+      "kept": "Workspace colour owns whole regions, not dots."
+    },
+    {
+      "id": "challenger-video-feed",
+      "label": "Vertical Media Feed",
+      "verdict": "declined",
+      "lineage": "Full-bleed vertical video apps",
+      "palette": ["#000000", "#FFFFFF"],
+      "materials": ["full-bleed media", "right-rail glyphs"],
+      "thesis": "One item owns the whole viewport at a time.",
+      "viewport": "A single item fills the screen and the next is one flick away.",
+      "risk": "A dashboard needs overview, not one item at a time.",
+      "case": "Loses on both axes: it's the opposite of an overview.",
+      "kept": "On a phone, the deep task owns the first screen on its own."
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "A clean, modern productivity dashboard like Linear or Things, executed with full craft.",
+    "palette": ["#FBFBFC", "#16181D", "#5E6AD2", "#E5E7EB"],
+    "materials": ["neutral grid", "hairline borders", "one accent"],
+    "viewport": "A left sidebar, a greeting header, a KPI row, then cards for focus, routine and workspaces.",
+    "risk": "It looks like every other productivity app.",
+    "html": ".impeccable/mocks/decision/canon.html"
+  },
+  "steer": true
+}

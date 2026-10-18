@@ -1,0 +1,78 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--field:#E7CF9D;--field2:#DEC48F;--rail:#2A1911;--rail2:#3A2519;--ink:#21160F;--muted:#6E5638;--line:#B9975F;--queen:#C4261D;--coin:#F4E8CC;--pocket:#15110D;
+--ss:#3651d4;--tk:#0b8f7e;--fl:#b8235a;--ad:#a86a00}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;display:flex;font-family:"IBM Plex Sans",sans-serif;color:var(--ink);background:var(--field)}
+.rail{width:248px;background:var(--rail);color:#EADBC0;padding:28px 20px;display:flex;flex-direction:column;gap:28px}
+.lvl b{font:800 40px/1 "Bricolage Grotesque";color:#fff}.lvl span{font-size:13px;color:#BFA582;margin-left:8px}
+.bar{height:8px;border-radius:4px;background:#4A3324;margin-top:12px;overflow:hidden}.bar i{display:block;height:100%;width:34%;background:var(--queen)}
+.xp{font-size:12px;color:#BFA582;margin-top:6px;font-variant-numeric:tabular-nums}
+nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:15px;font-weight:500;color:#D9C6A6;text-decoration:none}
+nav a.on{background:var(--rail2);color:#fff}
+nav a i{width:14px;height:14px;border-radius:50%;border:3px solid currentColor}
+main{flex:1;padding:36px 48px;display:grid;grid-template-columns:1fr 380px;gap:32px;
+background:radial-gradient(circle at 42% 30%,transparent 0 230px,rgba(0,0,0,0) 231px),var(--field)}
+h1{font:800 52px/1 "Bricolage Grotesque";letter-spacing:-.02em}
+.date{color:var(--muted);margin-top:6px;font-size:16px}
+.board{grid-column:1;display:flex;flex-direction:column;gap:22px}
+.queen{position:relative;display:flex;align-items:center;gap:28px;padding:26px 30px;border:2px solid var(--line);border-radius:18px;background:rgba(255,248,230,.45)}
+.medal{width:120px;height:120px;border-radius:50%;flex:none;display:grid;place-items:center;
+background:radial-gradient(circle,var(--queen) 0 40px,var(--field) 41px 47px,var(--queen) 48px 52px,transparent 53px);
+box-shadow:inset 0 0 0 2px var(--line)}
+.medal b{font:800 13px "Bricolage Grotesque";color:#fff;letter-spacing:.08em}
+.queen small{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.queen h2{font:800 30px/1.1 "Bricolage Grotesque";margin-top:6px}
+.queen p{color:var(--muted);margin-top:8px;font-size:15px}
+.code{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink);background:var(--coin);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:13px}
+.btn{margin-left:auto;align-self:center;background:var(--rail);color:#fff;border:0;border-radius:10px;padding:12px 18px;font:600 15px "IBM Plex Sans"}
+.lane{display:grid;grid-template-columns:150px 1fr 70px;align-items:center;gap:16px}
+.lane h3{font:800 18px "Bricolage Grotesque";display:flex;align-items:center;gap:8px}
+.lane h3 i{width:12px;height:12px;border-radius:50%;background:var(--c)}
+.track{position:relative;height:44px;border-top:2px solid var(--c);border-bottom:2px solid var(--c);
+background:color-mix(in srgb,var(--c) 14%,transparent);display:flex;align-items:center;gap:10px;padding:0 24px}
+.track:before,.track:after{content:"";position:absolute;top:50%;width:22px;height:22px;margin-top:-11px;border-radius:50%;border:3px solid var(--queen);background:var(--field)}
+.track:before{left:-12px}.track:after{right:-12px}
+.coin{height:28px;padding:0 12px;border-radius:14px;background:var(--coin);border:2px solid var(--c);font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.coin.wait{border-style:dashed}.coin.stale{border-style:dotted;color:var(--muted)}
+.lane .n{font-size:13px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+aside{display:flex;flex-direction:column;gap:20px}
+.panel{background:rgba(255,248,230,.55);border:1px solid var(--line);border-radius:16px;padding:20px}
+.panel h4{font:800 17px "Bricolage Grotesque";margin-bottom:12px;display:flex;justify-content:space-between}
+.panel h4 span{font:500 13px "IBM Plex Sans";color:var(--muted)}
+.chk{display:flex;gap:10px;padding:6px 0;font-size:14px}.chk i{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);flex:none;margin-top:2px}
+.chk.d i{background:var(--pocket);border-color:var(--pocket)}.chk.d{color:var(--muted)}
+.three{display:flex;gap:10px}.three div{flex:1;border-radius:12px;padding:12px;background:var(--coin);border:2px solid var(--line);font-size:13px}
+.three b{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.tag{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+</style></head><body>
+<div class="rail">
+  <div class="lvl"><b>1</b><span>Intern</span><div class="bar"><i></i></div><div class="xp">34 / 100 XP</div></div>
+  <nav><a class="on" href="#">Dashboard</a><a href="#" style="color:#9fb0ff"><i></i><span style="color:#D9C6A6">SoftSora</span></a>
+  <a href="#" style="color:#5fd1bf"><i></i><span style="color:#D9C6A6">TutorKit</span></a><a href="#" style="color:#f0709f"><i></i><span style="color:#D9C6A6">Freelance</span></a>
+  <a href="#" style="color:#e2a93b"><i></i><span style="color:#D9C6A6">Admin &amp; sales</span></a></nav>
+</div>
+<main>
+  <div class="board">
+    <div><h1>Tuesday</h1><div class="date">13 October 2026 · <span class="tag">sample data</span></div></div>
+    <div class="queen"><div class="medal"><b>QUEEN</b></div>
+      <div><small>Today's deep task · +50 XP</small><h2>Ship lesson builder autosave</h2><p><span class="code">GK</span> <span class="code">L-50</span> · Code · In progress</p></div>
+      <button class="btn">Mark dev released</button></div>
+    <div class="lane" style="--c:var(--ss)"><h3><i></i>SoftSora</h3><div class="track"><span class="coin">GK · 4</span><span class="coin wait">OL · 2 waiting</span><span class="coin">OT · 1</span></div><div class="n">7 open</div></div>
+    <div class="lane" style="--c:var(--tk)"><h3><i></i>TutorKit</h3><div class="track"><span class="coin">MX · 2</span><span class="coin stale">TK · 1 stale</span></div><div class="n">3 open</div></div>
+    <div class="lane" style="--c:var(--fl)"><h3><i></i>Freelance</h3><div class="track"><span class="coin">MIS · 3</span><span class="coin">WD · 1</span></div><div class="n">4 open</div></div>
+    <div class="lane" style="--c:var(--ad)"><h3><i></i>Admin</h3><div class="track"><span class="coin">INV · 2</span></div><div class="n">2 open</div></div>
+  </div>
+  <aside>
+    <div class="panel"><h4>PM sweep <span>3 / 7</span></h4>
+      <div class="chk d"><i></i>Unblock anyone who is stuck first</div><div class="chk d"><i></i>Clear pending code reviews (Gaku, Otasuke)</div>
+      <div class="chk d"><i></i>Scan overnight messages and tickets</div><div class="chk"><i></i>Nudge tickets awaiting production</div>
+      <div class="chk"><i></i>Flag anything due today or tomorrow</div></div>
+    <div class="panel"><h4>This week's three <span>1 / 3</span></h4>
+      <div class="three"><div><b>SoftSora</b>Olly release notes</div><div><b>TutorKit</b>Mathrix onboarding</div><div><b>Freelance</b>MIS invoice</div></div></div>
+    <div class="panel"><h4>Awaiting production <span>2</span></h4><div class="chk"><i style="border-style:dashed"></i><span><span class="code">OL</span> Dev released 9 days ago</span></div></div>
+  </aside>
+</main>
+</body></html>

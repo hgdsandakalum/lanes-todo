@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FBFBFC;--ink:#16181D;--muted:#5F6572;--line:#E5E7EB;--acc:#5E6AD2}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;display:flex;font-family:"IBM Plex Sans",sans-serif;color:var(--ink);background:var(--bg);font-size:14px}
+.side{width:232px;border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:18px;background:#F6F6F8}
+.side b{font:700 16px "Bricolage Grotesque";padding:0 8px}
+.side a{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;color:var(--muted);text-decoration:none}
+.side a.on{background:#ECECF1;color:var(--ink);font-weight:500}.side a i{width:8px;height:8px;border-radius:2px;background:var(--c)}
+.side small{color:var(--muted);font-size:12px;padding:0 8px}
+.lvl{padding:0 8px;font-size:12px;color:var(--muted)}.lvl i{display:block;height:4px;border-radius:2px;background:var(--line);margin-top:6px}.lvl i:after{content:"";display:block;height:100%;width:34%;background:var(--acc)}
+main{flex:1;padding:32px 40px}
+h1{font:700 26px "Bricolage Grotesque"}.date{color:var(--muted);margin-top:4px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:16px;background:#fff}.kpi span{color:var(--muted);font-size:12px}.kpi b{display:block;font:700 26px "Bricolage Grotesque";margin-top:6px}
+.grid{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}
+.card{border:1px solid var(--line);border-radius:10px;padding:18px;background:#fff}.card h2{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;justify-content:space-between}
+.card h2 span{color:var(--muted);font-weight:400}
+.deep h3{font:700 22px "Bricolage Grotesque"}.deep p{color:var(--muted);margin:6px 0 14px}.deep button{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:8px 14px;font:500 14px "IBM Plex Sans"}
+li{list-style:none;display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}li i{width:14px;height:14px;border:1.5px solid #C4C7CF;border-radius:4px;flex:none;margin-top:2px}
+.tag{font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+</style></head><body>
+<div class="side"><b>Lanes</b><div class="lvl">Level 1 · Intern · 34 / 100 XP<i></i></div>
+  <div><a class="on">Dashboard</a></div><small>Workspaces</small>
+  <div><a style="--c:#3651d4"><i></i>SoftSora</a><a style="--c:#0b8f7e"><i></i>TutorKit</a><a style="--c:#b8235a"><i></i>Freelance</a><a style="--c:#a86a00"><i></i>Admin &amp; sales</a></div></div>
+<main>
+  <h1>Tuesday, 13 October</h1><div class="date">Good morning · <span class="tag">sample data</span></div>
+  <div class="kpis"><div class="kpi"><span>XP this week</span><b>240</b></div><div class="kpi"><span>Weekly three</span><b>1 / 3</b></div><div class="kpi"><span>Deep task streak</span><b>4 days</b></div><div class="kpi"><span>Awaiting production</span><b>2</b></div></div>
+  <div class="grid">
+    <div class="card deep"><h2>Today's deep task <span>Gaku · L-50</span></h2><h3>Ship lesson builder autosave</h3><p>Code · In progress</p><button>Mark dev released</button></div>
+    <div class="card"><h2>PM sweep <span>3 / 7</span></h2><ul><li><i></i>Unblock anyone who is stuck first</li><li><i></i>Clear pending code reviews</li><li><i></i>Scan overnight messages and tickets</li><li><i></i>Nudge tickets awaiting production</li></ul></div>
+  </div>
+</main>
+</body></html>

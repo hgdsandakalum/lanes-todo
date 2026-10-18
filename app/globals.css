@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+/*
+ * The carrom board as a console: a near-black graphite field inside a black frame. Dark only, high contrast, tight corners.
+ * One typeface, Archivo: headings run it expanded, text at normal width. Pieces are square-cut, not round.
+ * The queen accent (electric cyan) belongs to the deep task and the level bar only.
+ * Workspace colours own their lanes; state is shown by line form (solid, dashed, dotted), not hue.
+ */
+:root {
+  --bg: #08090c; /* graphite, nearly black */
+  --surface: #11141a;
+  --sunk: #040507;
+  --ink: #eef3fa;
+  --muted: #94a0b5;
+  --line: #313a49;
+  --danger: #ff5c6c;
+
+  --rail: #020304; /* black frame */
+  --rail-ink: #eef3fa;
+  --rail-muted: #8592a8;
+  --rail-hover: #0f1218;
+  --rail-line: #1d232d;
+
+  --queen: #14d2ff; /* electric cyan: the one accent */
+  --queen-ink: #00151c;
+  --pocket: #eef3fa;
+
+  /* palette keys used by workspaces and projects: saturated signal colours, spread around the accent's cyan */
+  --c-indigo: #6f78ff;
+  --c-teal: #2ee6a6;
+  --c-raspberry: #ff4fa3;
+  --c-amber: #ffb224;
+  --c-violet: #b16cff;
+  --c-sky: #3d8eff;
+  --c-green: #a0e84a;
+  --c-slate: #8c97aa;
+
+  /* skill tracks */
+  --track-code: var(--c-indigo);
+  --track-design: var(--c-raspberry);
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sunk: var(--sunk);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-danger: var(--danger);
+  --color-rail: var(--rail);
+  --color-rail-ink: var(--rail-ink);
+  --color-rail-muted: var(--rail-muted);
+  --color-rail-hover: var(--rail-hover);
+  --color-rail-line: var(--rail-line);
+  --color-queen: var(--queen);
+  --color-queen-ink: var(--queen-ink);
+  --color-pocket: var(--pocket);
+  --font-display: "Archivo Variable", "Helvetica Neue", system-ui, sans-serif;
+  --font-sans: "Archivo Variable", "Helvetica Neue", system-ui, sans-serif;
+
+  /* tight corners: the board is cut, not moulded (no round pieces left) */
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 5px;
+  --radius-3xl: 6px;
+}
+
+html {
+  height: 100%;
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+  scrollbar-color: var(--line) transparent;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  caret-color: var(--queen);
+  accent-color: var(--queen);
+}
+
+::selection {
+  background: var(--queen);
+  color: var(--queen-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--queen);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+/* Headings are the same family as text, set wide: the width does the work a second face would. */
+@layer utilities {
+  .font-display {
+    font-stretch: 125%;
+  }
+}
+
+/* Codes and counts read as a catalogue: tabular figures everywhere they appear. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The one authored moment: a ticked routine item drops into its pocket. */
+@keyframes pocket {
+  from { transform: scale(1.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.pocket-in {
+  animation: pocket 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* XP earned: a small note that rises and fades. Never confetti. */
+@keyframes xp-rise {
+  0% { transform: translateY(4px); opacity: 0; }
+  15% { transform: translateY(0); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(-6px); opacity: 0; }
+}
+.xp-note {
+  animation: xp-rise 1.8s ease-out forwards;
+}
+
+/* Task descriptions (Markdown): plain reading text, the same face as everything else. */
+.md {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.md > * + * { margin-top: 0.6em; }
+.md h1, .md h2, .md h3, .md h4 { font-weight: 700; line-height: 1.3; margin-top: 1em; }
+.md h1 { font-size: 1.2em; }
+.md h2 { font-size: 1.1em; }
+.md h3, .md h4 { font-size: 1em; }
+.md > :first-child { margin-top: 0; }
+.md ul, .md ol { padding-left: 1.4em; }
+.md ul { list-style: square; }
+.md ol { list-style: decimal; }
+.md li + li { margin-top: 0.2em; }
+.md li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.4em; }
+.md input[type="checkbox"] { margin-right: 0.5em; vertical-align: -0.1em; }
+.md a { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+.md a:hover { text-decoration-color: var(--ink); }
+.md code { font-variant-numeric: tabular-nums; background: var(--sunk); border: 1px solid var(--line); border-radius: 2px; padding: 0 0.3em; font-size: 0.9em; }
+.md pre { background: var(--sunk); border: 1px solid var(--line); border-radius: 3px; padding: 0.6em 0.8em; overflow-x: auto; }
+.md pre code { background: none; border: 0; padding: 0; }
+.md blockquote { border-left: 2px solid var(--line); padding-left: 0.8em; color: var(--muted); }
+.md hr { border: 0; border-top: 1px solid var(--line); }
+.md table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 0.9em; }
+.md th, .md td { border: 1px solid var(--line); padding: 0.3em 0.6em; text-align: left; }
+.md img { max-width: 100%; }
