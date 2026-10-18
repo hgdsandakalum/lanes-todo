@@ -105,6 +105,9 @@ test("a note is written, saved, filed under a project, pinned, deleted and resto
   await page.waitForLoadState("networkidle");
   const row = page.getByRole("link", { name: new RegExp(title) });
   await expect(row).toContainText("Ship the export Tell the client");
+  // the formatted note keeps each Enter as its own line
+  await row.click();
+  await expect(page.getByRole("region", { name: "Open note" }).locator(".note-md br")).toHaveCount(1);
 
   await page.getByLabel("Folder", { exact: true }).selectOption({ label: "Gaku" });
   await open(page, "/notes?f=pr_gaku");
@@ -152,7 +155,10 @@ test("a note shows code blocks as panels and keeps pasted images", async ({ page
   await page.waitForLoadState("networkidle");
   await expect(page.getByRole("figure", { name: "bash code" })).toBeVisible();
   const src = await page.getByRole("img", { name: "image" }).getAttribute("src");
-  const signedOut = await page.context().browser()!.newContext({ storageState: { cookies: [], origins: [] } });
+  const signedOut = await page
+    .context()
+    .browser()!
+    .newContext({ storageState: { cookies: [], origins: [] } });
   const res = await signedOut.request.get(new URL(src!, page.url()).toString(), { maxRedirects: 0 });
   expect([307, 401]).toContain(res.status());
   await signedOut.close();

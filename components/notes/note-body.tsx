@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Markdown, { type ExtraProps } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeHighlight from "rehype-highlight";
 
 type Hast = { type: string; value?: string; children?: Hast[] };
@@ -9,13 +10,13 @@ const textOf = (n: Hast | undefined): string => (n ? (n.value ?? (n.children ?? 
 
 /**
  * A note's text, formatted: Markdown (GitHub flavour) with code blocks as their own panels, coloured by language,
- * and pasted images shown inline. Raw HTML is never rendered.
+ * and pasted images shown inline. Every Enter is a line break, as it is while typing. Raw HTML is never rendered.
  */
 export function NoteBody({ text }: { text: string }) {
   return (
     <div className="md note-md">
       <Markdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkBreaks]}
         rehypePlugins={[[rehypeHighlight, { detect: false }]]}
         components={{
           pre: CodePanel,
