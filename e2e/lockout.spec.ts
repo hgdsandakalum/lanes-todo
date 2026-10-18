@@ -3,6 +3,13 @@ import { expect, test } from "@playwright/test";
 // runs last (see playwright.config.ts): it locks out this machine's address on the test database
 test.use({ storageState: { cookies: [], origins: [] } });
 
+test("the login page's logo loads before signing in", async ({ page }) => {
+  await page.goto("/login");
+  const logo = page.getByRole("img", { name: "Lanes" });
+  await expect(logo).toBeVisible();
+  expect(await logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+});
+
 test("five wrong passcodes lock sign-in, even for the right one", async ({ page }) => {
   await page.goto("/login");
   const passcode = page.locator("input[name=passcode]");

@@ -12,5 +12,5 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   // /api/cli checks its own bearer token (the lanes command has no cookie)
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons/|manifest.webmanifest|api/cli$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons/|brand/|manifest.webmanifest|api/cli$).*)"],
 };
