@@ -33,14 +33,18 @@ const PLACEHOLDER: Record<ContextField, string> = {
   actual: "Lands on / and loses the page.",
 };
 
-/** Every field of a task. `remindAt` arrives formatted for a datetime-local input, in the app timezone. */
+/** Every field of a task. `remindAt` arrives formatted for a datetime-local input, in the app timezone. A good save goes back to `backHref`. */
 export function TaskEditor({ task, hasStaging, remindAt, backHref }: { task: Task; hasStaging: boolean; remindAt: string; backHref: string }) {
   const router = useRouter();
   const [type, setType] = useState(task.type as TaskType);
   const [kind, setKind] = useState<CodeKind>(codeKind(task.type, task.kind) ?? "feature");
   const [confirming, setConfirming] = useState(false);
   const [deleting, startDelete] = useTransition();
-  const [state, action, pending] = useActionState(updateTask, undefined as FormState);
+  const [state, action, pending] = useActionState(async (prev: FormState, form: FormData) => {
+    const res = await updateTask(prev, form);
+    if (!res?.error) router.push(backHref);
+    return res;
+  }, undefined as FormState);
   const id = (name: string) => `${name}-${task.id}`;
   const stageLost = !stagesFor(type, hasStaging, type === "code" ? kind : null).some((s) => s.key === task.stage);
   const fields = type === "code" ? KIND_FIELDS[kind] : [];

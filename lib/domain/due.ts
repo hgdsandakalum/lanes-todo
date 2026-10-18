@@ -23,7 +23,7 @@ export type DatedTask = {
 
 const days = (n: number) => (n === 1 ? "1 day" : `${n} days`);
 const released = (w: { devDay: string; waited: number }, today: string): Mark => ({
-  text: w.waited === 0 ? "Dev released today" : w.waited === 1 ? "Dev released yesterday" : `Dev released ${formatShort(w.devDay, today)} · ${days(w.waited)}`,
+  text: w.waited === 0 ? "Dev released today" : w.waited === 1 ? "Dev released yesterday" : `Dev released ${formatShort(w.devDay, today)}, waiting ${days(w.waited)}`,
   tone: "muted",
   icon: "dev",
   title: `Released to dev ${w.waited === 0 ? "today" : `${days(w.waited)} ago`}, waiting for QA and the client. No prod date yet.`,
@@ -71,7 +71,7 @@ export function waitingMark(t: Pick<DatedTask, "devReleasedAt" | "prodDate">, to
       : { text: `Prod ${formatShort(t.prodDate, today)}`, tone: "plain", icon: "prod", title: "The production release date the client gave." };
   if (w.flag === "long")
     return {
-      text: `Waiting ${days(w.waited)}, over the ${waitDays}-day limit`,
+      text: `Waiting ${days(w.waited)} for prod, over the ${waitDays}-day limit`,
       tone: "warn",
       icon: "wait",
       title: `Dev released ${days(w.waited)} ago with no prod date yet: worth asking the client.`,
@@ -88,7 +88,7 @@ export function dueMarks(t: DatedTask, today: string, opts: { waitDays: number; 
     const main: Mark = t.prodDate
       ? waitingMark(t, today, opts.waitDays)
       : w.flag === "long"
-        ? { ...waitingMark(t, today, opts.waitDays), text: `Waiting ${days(w.waited)}` }
+        ? { ...waitingMark(t, today, opts.waitDays), text: `Waiting ${days(w.waited)} for prod` }
         : released(w, today);
     return late
       ? [main, { text: `Due ${formatShort(t.due!, today)}, ${days(late)} late`, tone: "muted", icon: "due", title: `Reached dev ${days(late)} after its due date.` }]

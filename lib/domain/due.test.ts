@@ -17,16 +17,16 @@ test("before dev release the due date is the deadline", () => {
 
 test("after dev release the due date is hidden and the wait counts", () => {
   const t = { ...base, stage: "dev_released", due: "2026-10-16", devReleasedAt: at("2026-10-16") };
-  assert.deepEqual(dueMarks(t, today, opts), [{ text: "Dev released Fri 16 Oct · 3 days", tone: "muted" }]);
+  assert.deepEqual(dueMarks(t, today, opts), [{ text: "Dev released Fri 16 Oct, waiting 3 days", tone: "muted" }]);
   assert.equal(isOverdue(t, today), false);
   assert.deepEqual(dueMarks({ ...t, due: null, devReleasedAt: at(today) }, today, opts), [{ text: "Dev released today", tone: "muted" }]);
 });
 
 test("past the project's limit the wait turns amber, never red", () => {
   const t = { ...base, stage: "staging", due: null, devReleasedAt: at("2026-10-10") };
-  assert.deepEqual(dueMarks(t, today, opts), [{ text: "Waiting 9 days", tone: "warn" }]);
+  assert.deepEqual(dueMarks(t, today, opts), [{ text: "Waiting 9 days for prod", tone: "warn" }]);
   assert.deepEqual(prodWait(t, today, 7), { devDay: "2026-10-10", waited: 9, flag: "long", flagged: true });
-  assert.equal(waitingMark(t, today, 7).text, "Waiting 9 days, over the 7-day limit");
+  assert.equal(waitingMark(t, today, 7).text, "Waiting 9 days for prod, over the 7-day limit");
 });
 
 test("a prod date from the client replaces the wait and goes red only once missed", () => {

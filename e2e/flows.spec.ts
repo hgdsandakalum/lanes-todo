@@ -55,20 +55,52 @@ test("a dev released task stops being late, takes QA bugs and a prod date", asyn
   await open(page, "/w/softsora/gk");
   await quickAdd(page, `${title} #gk @code`);
   await page.reload();
-  await page.getByRole("link", { name: title }).click();
-  await page.waitForLoadState("networkidle");
+  const openTask = async () => {
+    await page.getByRole("link", { name: title, exact: true }).click();
+    await page.waitForURL(/\/t\//);
+    await page.waitForLoadState("networkidle");
+  };
+  // saving the editor goes back to the project's tasks
+  const save = async () => {
+    await page.getByRole("button", { name: "Save" }).click();
+    await page.waitForURL(/\/w\/softsora\/gk$/);
+    await page.waitForLoadState("networkidle");
+  };
+  await openTask();
+  // the editor stays open when the page is revisited, so open it only when it's shut
+  const edit = async () => {
+    const editor = page.locator("details:visible").filter({ has: page.getByText("Edit task") });
+    if ((await editor.getAttribute("open")) === null) await editor.getByText("Edit task").click();
+  };
 
   // late while it's yours
-  await page.getByText("Edit task").click();
+  await edit();
   await page.getByLabel("Due", { exact: true }).fill(day(-3));
-  await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.locator("main").getByText(/^Was due /)).toBeVisible();
+  await save();
+  await expect(
+    page
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("link", { name: title, exact: true }) })
+      .getByText(/^Was due /),
+  ).toBeVisible();
+  await openTask();
 
+  // (pages left behind stay mounted, hidden, so only visible text counts)
   // dev released: no longer late, the wait counts instead, and the miss is noted quietly
   await page.getByLabel(`Stage of ${title}`).first().selectOption("dev_released");
-  await expect(page.locator("main").getByText("Dev released today")).toBeVisible();
-  await expect(page.locator("main").getByText(/^Due .*, 3 days late$/)).toBeVisible();
-  await expect(page.locator("main").getByText(/^Was due /)).toHaveCount(0);
+  await expect(page.locator("main").getByText("Dev released today").filter({ visible: true })).toBeVisible();
+  await expect(
+    page
+      .locator("main")
+      .getByText(/^Due .*, 3 days late$/)
+      .filter({ visible: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .locator("main")
+      .getByText(/^Was due /)
+      .filter({ visible: true }),
+  ).toHaveCount(0);
 
   // QA finds a bug: it's a bug fix subtask, counted on the card
   await page.getByLabel("New QA bug").fill(`Button misaligned ${tag}`);
@@ -76,19 +108,19 @@ test("a dev released task stops being late, takes QA bugs and a prod date", asyn
   await expect(page.getByRole("link", { name: `Button misaligned ${tag}` })).toBeVisible();
   await expect(page.getByText("1 QA bug to fix", { exact: false })).toBeVisible();
 
-  // the client's date replaces the wait, and goes red only once it's missed
   // it really reached dev on its due date: correcting the date clears the late note
+  await edit();
   await page.getByLabel("Dev released on").fill(day(-3));
-  await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.locator("main").getByText(/^Dev released .* · 3 days$/)).toBeVisible();
-  await expect(page.locator("main").getByText(/days late$/)).toHaveCount(0);
-
-  await page.getByLabel("Prod date").fill(day(-1));
-  await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.locator("main").getByText("Prod was due Yesterday")).toBeVisible();
-
-  await open(page, "/w/softsora/gk");
+  await save();
   const card = page.getByRole("listitem").filter({ has: page.getByRole("link", { name: title, exact: true }) });
+  await expect(card.getByText(/^Dev released .*, waiting 3 days$/)).toBeVisible();
+  await expect(card.getByText(/days late$/)).toHaveCount(0);
+
+  // the client's date replaces the wait, and goes red only once it's missed
+  await openTask();
+  await edit();
+  await page.getByLabel("Prod date").fill(day(-1));
+  await save();
   await expect(card.getByText("1 QA bug", { exact: true })).toBeVisible();
   // bugs sent back make it yours again, so it stays with your work, still dashed
   await expect(page.getByRole("region", { name: "With QA and the client" }).getByRole("link", { name: title, exact: true })).toHaveCount(0);

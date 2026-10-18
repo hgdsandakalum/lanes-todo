@@ -137,7 +137,7 @@ async function TaskView({ params }: { params: PageProps<"/t/[task]">["params"] }
               Edit task <span aria-hidden className="ml-1 inline-block font-sans text-sm font-normal text-muted transition-transform group-open:rotate-90">›</span>
             </summary>
             <div className="mt-4">
-              <TaskEditor task={t} hasStaging={p.hasStaging} remindAt={t.remindAt ? localInput(t.remindAt) : ""} backHref={projectHref} />
+              <TaskEditor task={t} hasStaging={p.hasStaging} remindAt={t.remindAt ? localInput(t.remindAt) : ""} backHref={data.parent ? `/t/${data.parent.id.replace(/^t_/, "")}` : projectHref} />
             </div>
           </details>
         </div>
