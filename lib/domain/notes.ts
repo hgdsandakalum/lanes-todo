@@ -13,11 +13,28 @@ export const ALL = "all";
 export const UNFILED = "unfiled";
 export const DELETED = "deleted";
 
+/** A note's lines as plain words: no heading or list marks, code fences, image links or backticks. */
 const lines = (body: string) =>
   body
     .split("\n")
-    .map((l) => l.replace(/^\s*(#+\s*|[-*]\s+(\[[ xX]\]\s*)?)/, "").trim())
+    .filter((l) => !/^\s*```/.test(l))
+    .map((l) =>
+      l
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+        .replace(/`/g, "")
+        .replace(/^\s*(#+\s*|[-*]\s+(\[[ xX]\]\s*)?)/, "")
+        .trim(),
+    )
     .filter(Boolean);
+
+/** Path of an image stored with a note, as written into the note's text. */
+export const imagePath = (id: string) => `/api/notes/images/${id}`;
+/** Ids of the stored images a note's text still shows. */
+export const imageIds = (body: string) => [...body.matchAll(/\/api\/notes\/images\/(ni_[\w-]+)/g)].map((m) => m[1]);
+
+export const IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"] as const;
+/** Vercel caps a request at 4.5 MB; the browser shrinks anything bigger before it uploads. */
+export const IMAGE_MAX = 4 * 1024 * 1024;
 
 export const noteTitle = (body: string) => lines(body)[0]?.slice(0, 120) ?? UNTITLED;
 export const notePreview = (body: string) => lines(body).slice(1).join(" ").slice(0, 160);

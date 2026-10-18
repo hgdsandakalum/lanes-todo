@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ageGroup, fullStamp, listStamp, notePreview, noteTitle } from "./notes";
+import { ageGroup, fullStamp, imageIds, listStamp, notePreview, noteTitle } from "./notes";
 
 test("title is the first line with text, without heading or list marks", () => {
   assert.equal(noteTitle("\n\n# Gaku launch plan\nShip by Friday"), "Gaku launch plan");
@@ -31,4 +31,15 @@ test("stamps are in the app's time zone", () => {
   assert.equal(listStamp(at, "2026-10-18", "2026-10-20", "Asia/Colombo"), "Sunday");
   assert.equal(listStamp(at, "2026-10-18", "2026-11-30", "Asia/Colombo"), "18/10/2026");
   assert.equal(fullStamp(at, "Asia/Colombo"), "18 October 2026 at 11:40");
+});
+
+test("code fences, images and backticks stay out of titles and previews", () => {
+  const body = "Deploy steps\n![screenshot](/api/notes/images/ni_abc)\n```bash\nnpm run build\n```\nRun `vercel` after";
+  assert.equal(noteTitle(body), "Deploy steps");
+  assert.equal(notePreview(body), "npm run build Run vercel after");
+  assert.equal(noteTitle("```ts\nconst a = 1\n```"), "const a = 1");
+});
+
+test("imageIds finds the stored images a note shows", () => {
+  assert.deepEqual(imageIds("a ![x](/api/notes/images/ni_1-a) b ![y](https://example.com/p.png) ![z](/api/notes/images/ni_2)"), ["ni_1-a", "ni_2"]);
 });

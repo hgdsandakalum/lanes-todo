@@ -343,6 +343,22 @@ export const notes = sqliteTable(
   (t) => [index("notes_updated_idx").on(t.updatedAt)],
 );
 
+/** Images pasted into a note. The file lives in storage (lib/storage/images.ts) under `key`; it goes when its note is deleted for good. */
+export const noteImages = sqliteTable(
+  "note_images",
+  {
+    id: text("id").primaryKey(),
+    noteId: text("note_id")
+      .notNull()
+      .references(() => notes.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    contentType: text("content_type").notNull(),
+    size: integer("size").notNull(),
+    createdAt: ms("created_at").notNull().default(now),
+  },
+  (t) => [index("note_images_note_idx").on(t.noteId)],
+);
+
 /** Wrong passcodes, for the sign-in lockout in lib/domain/login-limit.ts. Cleared on a correct one and after a day. */
 export const loginFailures = sqliteTable(
   "login_failures",

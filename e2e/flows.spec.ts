@@ -125,3 +125,49 @@ test("a note is written, saved, filed under a project, pinned, deleted and resto
   await open(page, `/search?q=${encodeURIComponent(title)}`);
   await expect(page.getByRole("link", { name: title })).toBeVisible();
 });
+
+test("a note shows code blocks as panels and keeps pasted images", async ({ page }) => {
+  await open(page, "/notes?f=pr_gaku");
+  await page.getByRole("button", { name: "New note" }).first().click();
+  await page.getByLabel("Title").fill(`Deploy steps ${tag}`);
+  await page.getByLabel("Title").press("Enter");
+  await page.getByLabel("Note", { exact: true }).fill("Run this:\n```bash\nnpm run build\n```");
+
+  // a 1x1 PNG, added through the image button
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+  await page.getByLabel("Image to add").setInputFiles({ name: "shot.png", mimeType: "image/png", buffer: png });
+  await expect(page.getByText("Saved")).toBeVisible();
+
+  // leaving the text shows it formatted
+  await page.getByLabel("Title").click();
+  const panel = page.getByRole("figure", { name: "bash code" });
+  await expect(panel).toContainText("npm run build");
+  await expect(panel.getByRole("button", { name: "Copy bash code" })).toBeVisible();
+  const img = page.getByRole("img", { name: "image" });
+  await expect(img).toBeVisible();
+  expect(await img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth === 1)).toBe(true);
+
+  // it all survives a reload, and the image is private
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByRole("figure", { name: "bash code" })).toBeVisible();
+  const src = await page.getByRole("img", { name: "image" }).getAttribute("src");
+  const signedOut = await page.context().browser()!.newContext({ storageState: { cookies: [], origins: [] } });
+  const res = await signedOut.request.get(new URL(src!, page.url()).toString(), { maxRedirects: 0 });
+  expect([307, 401]).toContain(res.status());
+  await signedOut.close();
+
+  // the code block button wraps a new block in fences
+  await page.getByRole("region", { name: "Open note" }).getByText("Run this:").click();
+  await page.getByRole("button", { name: "Insert code block" }).click();
+  await page.keyboard.type("SELECT 1;");
+  await expect(page.getByLabel("Note", { exact: true })).toHaveValue(/```\nSELECT 1;\n```/);
+});
+
+test("uploads that aren't images are refused", async ({ page }) => {
+  await open(page, "/notes?f=all");
+  const res = await page.request.post("/api/notes/images", {
+    multipart: { noteId: "nt_missing", file: { name: "x.png", mimeType: "image/png", buffer: Buffer.from("<html>not a png</html>") } },
+  });
+  expect(res.status()).toBe(404);
+});

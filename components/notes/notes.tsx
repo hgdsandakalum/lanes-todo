@@ -7,6 +7,8 @@ import type { Folder, NoteRow, getNotesPage } from "@/lib/data/notes";
 import { colorVar } from "@/lib/domain/palette";
 import { ALL, DELETED, TRASH_DAYS, UNFILED } from "@/lib/domain/notes";
 import { ProjectTag } from "@/components/tasks/project-tag";
+import { NoteBody } from "./note-body";
+import { uploadImage } from "./upload";
 
 type Data = Awaited<ReturnType<typeof getNotesPage>>;
 type View = "folders" | "list" | "note";
@@ -15,7 +17,7 @@ const href = (folder: string, note?: string) => `/notes?f=${encodeURIComponent(f
 /** On wide screens all three panes show; narrower, only the one for the current step. */
 const pane = (on: boolean) => (on ? "flex" : "hidden xl:flex");
 const iconBtn = "grid size-9 shrink-0 place-items-center rounded-sm text-muted hover:bg-sunk hover:text-ink disabled:opacity-40 aria-pressed:text-queen";
-const backLink = "inline-flex min-w-0 items-center gap-1 whitespace-nowrap py-1 text-sm text-muted hover:text-ink xl:hidden";
+const backLink = "inline-flex min-w-0 shrink items-center gap-1 whitespace-nowrap py-1 text-sm text-muted hover:text-ink xl:hidden [&>span]:truncate";
 
 /** Apple Notes-style notes: folders, the notes in one, and the open note. */
 export function NotesApp({ data, open, view }: { data: Data; open: NoteRow | null; view: View }) {
@@ -224,6 +226,13 @@ function Editor({ note, data }: { note: NoteRow; data: Data }) {
   const pending = useRef<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const readOnly = note.deleted;
+  // the text shows formatted (code panels, images) until you click into it; an empty note opens ready to type
+  const [editing, setEditing] = useState(!readOnly && !rest.trim());
+  const [uploading, setUploading] = useState(0);
+  // where the cursor was in the text, so buttons and pastes insert there; and where to put it after an insert
+  const sel = useRef<{ start: number; end: number } | null>(null);
+  const caret = useRef<number | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const flush = useCallback(() => {
     clearTimeout(timer.current);
@@ -267,7 +276,57 @@ function Editor({ note, data }: { note: NoteRow; data: Data }) {
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
-  }, [rest]);
+    if (caret.current != null) {
+      el.focus();
+      el.setSelectionRange(caret.current, caret.current);
+      caret.current = null;
+    }
+  }, [rest, editing]);
+
+  /** Opens the text for editing with the cursor at `at` (the end by default). */
+  function edit(at = rest.length) {
+    if (readOnly) return;
+    caret.current = at;
+    setEditing(true);
+  }
+
+  /** Puts `text` on its own lines at the cursor (or the end), replacing any selection; the cursor lands `offset` characters in. */
+  function insertBlock(text: string, offset = text.length) {
+    const { start, end } = sel.current ?? { start: rest.length, end: rest.length };
+    const before = rest.slice(0, start);
+    const after = rest.slice(end);
+    const lead = before && !before.endsWith("\n") ? "\n" : "";
+    const tail = after.startsWith("\n") ? "" : "\n";
+    const next = `${before}${lead}${text}${tail}${after}`;
+    const at = before.length + lead.length + offset;
+    sel.current = { start: at, end: at };
+    setRest(next);
+    changed(title, next);
+    edit(at);
+  }
+
+  function codeBlock() {
+    const picked = sel.current && editing ? rest.slice(sel.current.start, sel.current.end) : "";
+    if (picked) insertBlock(`\`\`\`\n${picked.replace(/\n$/, "")}\n\`\`\``);
+    else insertBlock("```\n\n```", 4);
+  }
+
+  async function addImages(files: File[]) {
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    if (!images.length || readOnly) return;
+    setError(null);
+    setUploading((n) => n + images.length);
+    for (const file of images) {
+      try {
+        const path = await uploadImage(note.id, file);
+        insertBlock(`![image](${path})`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Couldn't upload that image.");
+      } finally {
+        setUploading((n) => n - 1);
+      }
+    }
+  }
 
   // a new, empty note opens ready to type its title
   useEffect(() => {
@@ -285,10 +344,11 @@ function Editor({ note, data }: { note: NoteRow; data: Data }) {
     <>
       <div className="flex items-center gap-1 border-b border-line px-3 py-2">
         <Link href={href(data.folder)} className={backLink}>
-          <Chevron /> {data.name}
+          <Chevron /> <span>{data.name}</span>
         </Link>
-        <p aria-live="polite" className="ml-auto mr-2 text-xs text-muted xl:ml-0">
-          {readOnly ? "" : save === "saving" ? "Saving…" : save === "error" ? <span className="text-danger">Not saved</span> : "Saved"}
+        {/* on phones there's only room for the status while it's news: saving, adding an image, or a failed save */}
+        <p aria-live="polite" className={`ml-auto mr-2 shrink-0 text-xs text-muted xl:ml-0 ${!readOnly && !uploading && save === "saved" ? "max-sm:sr-only" : ""}`}>
+          {readOnly ? "" : uploading ? "Adding image…" : save === "saving" ? "Saving…" : save === "error" ? <span className="text-danger">Not saved</span> : "Saved"}
         </p>
         {readOnly ? (
           <div className="ml-auto flex gap-1">
@@ -312,6 +372,25 @@ function Editor({ note, data }: { note: NoteRow; data: Data }) {
           </div>
         ) : (
           <div className="flex items-center gap-1 xl:ml-auto">
+            {/* mousedown keeps the text focused, so these insert where the cursor is */}
+            <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={codeBlock} aria-label="Insert code block" title="Code block" className={iconBtn}>
+              <CodeIcon className="size-[18px]" />
+            </button>
+            <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => fileRef.current?.click()} aria-label="Add image" title="Add image" className={iconBtn}>
+              <ImageIcon className="size-[18px]" />
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              aria-label="Image to add"
+              onChange={(e) => {
+                void addImages([...(e.target.files ?? [])]);
+                e.target.value = "";
+              }}
+            />
             <MoveTo note={note} data={data} disabled={busy} onMove={(to) => act(() => moveNote(note.id, to), href(data.folder === ALL ? ALL : to, note.id))} />
             <button
               type="button"
@@ -343,7 +422,23 @@ function Editor({ note, data }: { note: NoteRow; data: Data }) {
         </p>
       ) : null}
       {readOnly ? <p className="border-b border-line px-5 py-2 text-sm text-muted">This note is in Recently deleted. Restore it to edit it.</p> : null}
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-10 pt-4 md:px-8">
+      <div
+        className="min-h-0 flex-1 overflow-y-auto px-5 pb-10 pt-4 md:px-8"
+        onPaste={(e) => {
+          const files = [...e.clipboardData.files];
+          if (readOnly || !files.some((f) => f.type.startsWith("image/"))) return;
+          e.preventDefault();
+          void addImages(files);
+        }}
+        onDragOver={(e) => {
+          if (!readOnly && e.dataTransfer.types.includes("Files")) e.preventDefault();
+        }}
+        onDrop={(e) => {
+          if (readOnly || !e.dataTransfer.files.length) return;
+          e.preventDefault();
+          void addImages([...e.dataTransfer.files]);
+        }}
+      >
         <p className="tabular mb-4 text-center text-xs text-muted">{note.fullStamp}</p>
         <label htmlFor="note-title" className="sr-only">
           Title
@@ -369,30 +464,55 @@ function Editor({ note, data }: { note: NoteRow; data: Data }) {
           }}
           className="w-full bg-transparent font-display text-2xl font-extrabold tracking-tight outline-none placeholder:text-muted/50"
         />
-        <label htmlFor="note-body" className="sr-only">
-          Note
-        </label>
-        <textarea
-          ref={textRef}
-          id="note-body"
-          value={rest}
-          readOnly={readOnly}
-          placeholder={readOnly ? "" : "Start writing"}
-          rows={8}
-          onChange={(e) => {
-            setRest(e.target.value);
-            changed(title, e.target.value);
-          }}
-          onKeyDown={(e) => {
-            // backspace at the very start goes back up to the title, like one continuous page
-            const el = e.currentTarget;
-            if (e.key === "Backspace" && el.selectionStart === 0 && el.selectionEnd === 0) {
-              e.preventDefault();
-              titleRef.current?.focus();
-            }
-          }}
-          className="mt-3 w-full resize-none overflow-hidden bg-transparent text-[16px] leading-relaxed outline-none placeholder:text-muted/50"
-        />
+        {editing ? (
+          <>
+            <label htmlFor="note-body" className="sr-only">
+              Note
+            </label>
+            <textarea
+              ref={textRef}
+              id="note-body"
+              value={rest}
+              placeholder="Start writing. Paste images, or use ``` for code."
+              rows={8}
+              onChange={(e) => {
+                setRest(e.target.value);
+                changed(title, e.target.value);
+              }}
+              onSelect={(e) => (sel.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd })}
+              onBlur={(e) => {
+                sel.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd };
+                // back to the formatted view, unless there's nothing to show yet
+                if (rest.trim()) setEditing(false);
+              }}
+              onKeyDown={(e) => {
+                const el = e.currentTarget;
+                // backspace at the very start goes back up to the title, like one continuous page
+                if (e.key === "Backspace" && el.selectionStart === 0 && el.selectionEnd === 0) {
+                  e.preventDefault();
+                  titleRef.current?.focus();
+                }
+                if (e.key === "Escape") el.blur();
+              }}
+              className="mt-3 w-full resize-none overflow-hidden bg-transparent font-mono text-[15px] leading-relaxed outline-none placeholder:text-muted/50"
+            />
+          </>
+        ) : rest.trim() ? (
+          // a click anywhere but a link, image or button opens the text for editing
+          <div
+            className={`mt-3 ${readOnly ? "" : "cursor-text"}`}
+            onClick={(e) => {
+              if (!(e.target as HTMLElement).closest("a, button") && !window.getSelection()?.toString()) edit();
+            }}
+          >
+            <NoteBody text={rest} />
+            {readOnly ? null : (
+              <button type="button" onClick={() => edit()} className="mt-4 text-sm text-muted underline decoration-line underline-offset-4 hover:text-ink">
+                Edit text
+              </button>
+            )}
+          </div>
+        ) : null}
       </div>
     </>
   );
@@ -410,7 +530,7 @@ function MoveTo({ note, data, disabled, onMove }: { note: NoteRow; data: Data; d
         value={note.folder}
         disabled={disabled}
         onChange={(e) => onMove(e.target.value)}
-        className="max-w-40 cursor-pointer truncate rounded-full border border-line bg-bg py-1 pl-3 pr-2 text-sm hover:border-muted focus:border-queen"
+        className="max-w-28 cursor-pointer truncate rounded-full sm:max-w-40 border border-line bg-bg py-1 pl-3 pr-2 text-sm hover:border-muted focus:border-queen"
       >
         <option value={UNFILED}>Notes</option>
         {data.tree.map((w) => (
@@ -425,6 +545,24 @@ function MoveTo({ note, data, disabled, onMove }: { note: NoteRow; data: Data; d
         ))}
       </select>
     </>
+  );
+}
+
+function CodeIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 20 20" className={className} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square">
+      <path d="M7 5 2.5 10 7 15M13 5l4.5 5-4.5 5" />
+    </svg>
+  );
+}
+
+function ImageIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 20 20" className={className} fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="2.75" y="3.75" width="14.5" height="12.5" />
+      <circle cx="7" cy="8" r="1.4" />
+      <path d="m3 15 4.5-4.5 3 3 2.5-2.5 4.5 4.5" />
+    </svg>
   );
 }
 

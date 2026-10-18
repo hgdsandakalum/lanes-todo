@@ -165,3 +165,25 @@ h1, h2, h3 {
 .md table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 0.9em; }
 .md th, .md td { border: 1px solid var(--line); padding: 0.3em 0.6em; text-align: left; }
 .md img { max-width: 100%; }
+
+/* Notes: code blocks are their own dark panels, coloured from the project palette (rehype-highlight classes). */
+.note-md { font-size: 1rem; line-height: 1.65; }
+.note-md > * + * { margin-top: 0.8em; }
+.note-code { margin: 1em 0; border: 1px solid var(--line); border-radius: 3px; background: var(--sunk); overflow: hidden; }
+.note-code figcaption { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.3rem 0.4rem 0.3rem 0.8rem; border-bottom: 1px solid var(--line); background: var(--surface); font-size: 0.75rem; color: var(--muted); }
+.note-code figcaption button { border-radius: 2px; padding: 0.15rem 0.5rem; font-weight: 600; color: var(--ink); }
+.note-code figcaption button:hover { background: var(--sunk); }
+.note-code figcaption button:focus-visible { outline: 2px solid var(--queen); outline-offset: 1px; }
+.md .note-code pre { margin: 0; border: 0; border-radius: 0; background: none; padding: 0.8em 1em; overflow-x: auto; overflow-wrap: normal; white-space: pre; }
+.note-code code { font-family: var(--font-mono); font-size: 0.875rem; line-height: 1.6; tab-size: 2; }
+.hljs-comment, .hljs-quote { color: var(--muted); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-doctag { color: var(--c-violet); }
+.hljs-string, .hljs-regexp, .hljs-addition, .hljs-symbol { color: var(--c-green); }
+.hljs-number, .hljs-bullet, .hljs-link { color: var(--c-amber); }
+.hljs-title, .hljs-section, .hljs-title.function_ { color: var(--c-sky); }
+.hljs-attr, .hljs-attribute, .hljs-property, .hljs-variable, .hljs-template-variable, .hljs-params { color: var(--c-teal); }
+.hljs-built_in, .hljs-type, .hljs-title.class_ { color: var(--queen); }
+.hljs-meta, .hljs-tag, .hljs-name, .hljs-selector-class, .hljs-selector-id { color: var(--c-raspberry); }
+.hljs-deletion { color: var(--danger); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 700; }

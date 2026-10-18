@@ -1,7 +1,8 @@
 import "server-only";
-import { and, asc, count, desc, eq, isNotNull, isNull, lt, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNotNull, isNull, lt, type SQL } from "drizzle-orm";
 import { db, schema as s } from "@/lib/db/client";
 import { requireSession } from "@/lib/auth/session";
+import { deleteImages } from "@/lib/storage/images";
 import { ymd } from "@/lib/domain/dates";
 import { ALL, DELETED, TRASH_DAYS, UNFILED, ageGroup, fullStamp, listStamp, notePreview, noteTitle } from "@/lib/domain/notes";
 
@@ -33,11 +34,22 @@ function inFolder(key: string): SQL | undefined {
   return and(live, eq(s.notes.workspaceId, key), isNull(s.notes.projectId));
 }
 
+/** Deletes notes for good, and the images stored with them. Not an action: callers check the session. */
+export async function purgeNotes(where: SQL | undefined) {
+  const gone = await db.select({ id: s.notes.id }).from(s.notes).where(where);
+  if (!gone.length) return;
+  const ids = gone.map((n) => n.id);
+  const images = await db.select({ key: s.noteImages.key }).from(s.noteImages).where(inArray(s.noteImages.noteId, ids));
+  // files first: if storage fails, the rows stay and the next purge tries again
+  await deleteImages(images.map((i) => i.key));
+  await db.delete(s.notes).where(inArray(s.notes.id, ids));
+}
+
 /** The folder tree with counts, and the notes in one folder, ready to show. */
 export async function getNotesPage(folder: string) {
   await requireSession();
   // deleted notes are kept for 30 days, then cleared
-  await db.delete(s.notes).where(lt(s.notes.deletedAt, new Date(Date.now() - TRASH_DAYS * 864e5)));
+  await purgeNotes(lt(s.notes.deletedAt, new Date(Date.now() - TRASH_DAYS * 864e5)));
 
   const [workspaces, projects, counts] = await Promise.all([
     db.select().from(s.workspaces).orderBy(asc(s.workspaces.sort)),

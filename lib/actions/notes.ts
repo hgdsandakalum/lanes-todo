@@ -3,6 +3,7 @@ import { and, eq, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db, schema as s } from "@/lib/db/client";
 import { requireSession } from "@/lib/auth/session";
+import { purgeNotes } from "@/lib/data/notes";
 import { ALL, DELETED, NOTE_MAX, UNFILED } from "@/lib/domain/notes";
 
 /** A folder key as the two columns it's stored in; null when no such folder exists. */
@@ -17,7 +18,7 @@ export async function createNote(folder: string): Promise<{ id?: string; error?:
   await requireSession();
   const where = await place(folder);
   if (!where) return { error: "That folder doesn't exist any more." };
-  await db.delete(s.notes).where(and(sql`trim(${s.notes.body}) = ''`, isNull(s.notes.deletedAt)));
+  await purgeNotes(and(sql`trim(${s.notes.body}) = ''`, isNull(s.notes.deletedAt)));
   const id = `nt_${crypto.randomUUID()}`;
   await db.insert(s.notes).values({ id, ...where });
   refresh();
@@ -55,7 +56,7 @@ export async function setNotePinned(id: string, pinned: boolean) {
 /** Moves a note to Recently deleted; it's cleared for good after 30 days. An empty note just goes. */
 export async function deleteNote(id: string) {
   await requireSession();
-  await db.delete(s.notes).where(and(eq(s.notes.id, id), sql`trim(${s.notes.body}) = ''`));
+  await purgeNotes(and(eq(s.notes.id, id), sql`trim(${s.notes.body}) = ''`));
   await db.update(s.notes).set({ deletedAt: new Date(), pinned: false }).where(eq(s.notes.id, id));
   refresh();
 }
@@ -69,6 +70,6 @@ export async function restoreNote(id: string) {
 /** Deletes a note from Recently deleted for good. */
 export async function destroyNote(id: string) {
   await requireSession();
-  await db.delete(s.notes).where(and(eq(s.notes.id, id), isNotNull(s.notes.deletedAt)));
+  await purgeNotes(and(eq(s.notes.id, id), isNotNull(s.notes.deletedAt)));
   refresh();
 }
