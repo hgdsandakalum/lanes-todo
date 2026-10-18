@@ -11,12 +11,14 @@ export const aboveCard = "relative z-10";
 
 /**
  * A task as a card: a raised surface, edged on the left in its project's colour. Put one CardLink inside;
- * it stretches over the whole card, so a click anywhere opens the task.
+ * it stretches over the whole card, so a click anywhere opens the task. A `waiting` card (your part done, with QA
+ * or the client) is sunk and dashed, the board's line form for waiting.
  */
-export function TaskCard({ color, className = "", children }: { color?: string; className?: string; children: React.ReactNode }) {
+export function TaskCard({ color, waiting = false, className = "", children }: { color?: string; waiting?: boolean; className?: string; children: React.ReactNode }) {
   return (
     <li
-      className={`relative rounded-sm border border-l-[3px] border-line bg-surface px-4 py-3 outline-offset-2 outline-queen transition-colors hover:border-muted/60 hover:bg-[color-mix(in_srgb,var(--surface)_80%,var(--ink)_4%)] has-[a[data-card]:focus-visible]:outline-2 ${className}`}
+      data-waiting={waiting || undefined}
+      className={`relative rounded-sm border border-l-[3px] border-line px-4 py-3 ${waiting ? "border-dashed bg-sunk" : "bg-surface"} outline-offset-2 outline-queen transition-colors hover:border-muted/60 hover:bg-[color-mix(in_srgb,var(--surface)_80%,var(--ink)_4%)] has-[a[data-card]:focus-visible]:outline-2 ${className}`}
       style={color ? { borderLeftColor: colorVar(color) } : undefined}
     >
       {children}

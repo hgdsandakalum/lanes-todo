@@ -35,6 +35,10 @@ test("a code task goes from dev released to a shipped release", async ({ page })
   await page.waitForLoadState("networkidle");
   const ready = page.getByRole("region", { name: "Ready to ship" });
   await expect(ready.getByText(title)).toBeVisible();
+  // with QA now: grouped apart, on a dashed card
+  const withQa = page.getByRole("region", { name: "With QA and the client" });
+  await expect(withQa.getByRole("link", { name: title })).toBeVisible();
+  await expect(withQa.locator("li[data-waiting]")).not.toHaveCount(0);
 
   await ready.getByRole("checkbox", { name: new RegExp(title) }).check();
   await ready.getByLabel(/Release name|Name/).fill(`v-${tag}`);
@@ -80,6 +84,9 @@ test("a dev released task stops being late, takes QA bugs and a prod date", asyn
   await open(page, "/w/softsora/gk");
   const card = page.getByRole("listitem").filter({ has: page.getByRole("link", { name: title, exact: true }) });
   await expect(card.getByText("1 QA bug", { exact: true })).toBeVisible();
+  // bugs sent back make it yours again, so it stays with your work, still dashed
+  await expect(page.getByRole("region", { name: "With QA and the client" }).getByRole("link", { name: title, exact: true })).toHaveCount(0);
+  await expect(card).toHaveAttribute("data-waiting", "true");
   await expect(card.getByText("Prod was due Yesterday")).toHaveClass(/text-danger/);
   await expect(page.getByRole("region", { name: "Ready to ship" }).getByText("Prod was due Yesterday")).toBeVisible();
 });

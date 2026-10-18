@@ -1,4 +1,4 @@
-import { dueMarks } from "@/lib/domain/due";
+import { dueMarks, isWaiting } from "@/lib/domain/due";
 import { formatMinutes } from "@/lib/domain/estimate";
 import { describeRecur } from "@/lib/domain/recur";
 import { FINISHED_FOR_ME, taskKindLabel, type Priority, type Stage, type TaskType } from "@/lib/domain/stages";
@@ -34,7 +34,7 @@ export function TaskRow({ task, stages, repo, today, waitDays, color, labels = [
   const qa = bugs > 0 && FINISHED_FOR_ME.has(task.stage);
 
   return (
-    <TaskCard color={color}>
+    <TaskCard color={color} waiting={isWaiting(task)}>
       <div className="grid grid-cols-1 items-start gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <div className="min-w-0">
           <p className="flex items-start gap-2 font-medium leading-snug">

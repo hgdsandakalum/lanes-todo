@@ -27,6 +27,9 @@ const released = (w: { devDay: string; waited: number }, today: string) =>
 /** Design work sent for feedback: the client's move. */
 export const withClient = (t: Pick<DatedTask, "type" | "stage">) => t.type === "design" && t.stage === "feedback";
 
+/** Your part is done and it's with QA or the client: dev released or in staging, or design sent for feedback. */
+export const isWaiting = (t: Pick<DatedTask, "type" | "stage" | "closedAt">) => t.closedAt == null && ((t.type === "code" && FINISHED_FOR_ME.has(t.stage)) || withClient(t));
+
 /** Past its due date while it's still yours to finish. */
 export function isOverdue(t: Pick<DatedTask, "stage" | "type" | "due" | "closedAt">, today: string): boolean {
   return t.closedAt == null && !FINISHED_FOR_ME.has(t.stage) && !withClient(t) && t.due != null && t.due < today;

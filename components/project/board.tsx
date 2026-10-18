@@ -1,5 +1,5 @@
 import type { Project, Task } from "@/lib/db/schema";
-import { dueMarks } from "@/lib/domain/due";
+import { dueMarks, isWaiting } from "@/lib/domain/due";
 import { PriorityMark } from "@/components/tasks/priority";
 import { type Priority, closingStage, FINISHED_FOR_ME, codeKind, stagesFor, taskKindLabel, TASK_TYPES, CODE_KINDS, type TaskType } from "@/lib/domain/stages";
 import { KindIcon } from "@/components/tasks/kind-icon";
@@ -47,7 +47,7 @@ export function Boards({ project, tasks, types, today, extras = {} }: { project:
                     </div>
                     <ul className="flex flex-col gap-2 p-2">
                       {cards.map((t) => (
-                        <li key={t.id} className={`rounded-sm border border-line bg-surface p-3 ${closing ? "opacity-70" : ""}`}>
+                        <li key={t.id} className={`rounded-sm border border-line p-3 ${isWaiting(t) ? "border-dashed bg-sunk" : "bg-surface"} ${closing ? "opacity-70" : ""}`}>
                           <Link href={taskHref(t.id)} className="text-sm font-medium leading-snug hover:underline">
                             {t.title}
                           </Link>
