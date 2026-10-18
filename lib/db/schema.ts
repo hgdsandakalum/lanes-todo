@@ -19,11 +19,15 @@ export const projects = sqliteTable(
   "projects",
   {
     id: text("id").primaryKey(),
-    workspaceId: text("workspace_id").notNull().references(() => workspaces.id),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id),
     name: text("name").notNull(),
     code: text("code").notNull(), // quick-add handle, e.g. GK → #gk
     color: text("color").notNull(),
-    status: text("status", { enum: ["active", "archived"] }).notNull().default("active"),
+    status: text("status", { enum: ["active", "archived"] })
+      .notNull()
+      .default("active"),
     hasStaging: integer("has_staging", { mode: "boolean" }).notNull().default(false),
     prodWaitDays: integer("prod_wait_days").notNull().default(7),
     repo: text("repo"), // https URL of the git repo, e.g. https://github.com/softsora/gaku
@@ -37,7 +41,9 @@ export const projects = sqliteTable(
 
 export const releases = sqliteTable("releases", {
   id: text("id").primaryKey(),
-  projectId: text("project_id").notNull().references(() => projects.id),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id),
   name: text("name").notNull(),
   releasedAt: ms("released_at").notNull().default(now),
 });
@@ -46,10 +52,14 @@ export const tasks = sqliteTable(
   "tasks",
   {
     id: text("id").primaryKey(),
-    projectId: text("project_id").notNull().references(() => projects.id),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id),
     title: text("title").notNull(),
     description: text("description"), // Markdown
-    type: text("type", { enum: ["code", "design", "general"] }).notNull().default("general"),
+    type: text("type", { enum: ["code", "design", "general"] })
+      .notNull()
+      .default("general"),
     kind: text("kind"), // code tasks only: feature, bug, refactor, review, ship, research (lib/domain/kinds.ts); null = feature
     priority: text("priority", { enum: ["urgent", "high", "medium", "low"] }), // null = none
     parentId: text("parent_id"), // a subtask's task (one level deep)
@@ -88,7 +98,9 @@ export const tasks = sqliteTable(
 /** The day's one deep task, one row per day, kept as history for streaks. */
 export const deepTasks = sqliteTable("deep_tasks", {
   date: text("date").primaryKey(), // YYYY-MM-DD, local calendar day
-  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  taskId: text("task_id")
+    .notNull()
+    .references(() => tasks.id, { onDelete: "cascade" }),
   pickedAt: ms("picked_at").notNull().default(now),
 });
 
@@ -97,8 +109,12 @@ export const weeklyStars = sqliteTable(
   "weekly_stars",
   {
     week: text("week").notNull(), // the Sunday that starts the week, YYYY-MM-DD
-    workspaceId: text("workspace_id").notNull().references(() => workspaces.id),
-    taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
   },
   (t) => [primaryKey({ columns: [t.week, t.workspaceId] })],
 );
@@ -106,7 +122,9 @@ export const weeklyStars = sqliteTable(
 /** Every stage move is logged; drives XP and "time in review" stats. */
 export const stageEvents = sqliteTable("stage_events", {
   id: text("id").primaryKey(),
-  taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  taskId: text("task_id")
+    .notNull()
+    .references(() => tasks.id, { onDelete: "cascade" }),
   fromStage: text("from_stage"),
   toStage: text("to_stage").notNull(),
   at: ms("at").notNull().default(now),
@@ -141,7 +159,9 @@ export const routineChecks = sqliteTable(
   "routine_checks",
   {
     date: text("date").notNull(), // YYYY-MM-DD
-    routineKey: text("routine_key").notNull().references(() => routines.key, { onDelete: "cascade" }),
+    routineKey: text("routine_key")
+      .notNull()
+      .references(() => routines.key, { onDelete: "cascade" }),
     itemIndex: integer("item_index").notNull(),
   },
   (t) => [primaryKey({ columns: [t.date, t.routineKey, t.itemIndex] })],
@@ -157,7 +177,9 @@ export const checklistItems = sqliteTable(
   "checklist_items",
   {
     id: text("id").primaryKey(),
-    taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
     text: text("text").notNull(),
     doneAt: ms("done_at"),
     sort: integer("sort").notNull().default(0),
@@ -174,8 +196,12 @@ export const labels = sqliteTable("labels", {
 export const taskLabels = sqliteTable(
   "task_labels",
   {
-    taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
-    labelId: text("label_id").notNull().references(() => labels.id, { onDelete: "cascade" }),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    labelId: text("label_id")
+      .notNull()
+      .references(() => labels.id, { onDelete: "cascade" }),
   },
   (t) => [primaryKey({ columns: [t.taskId, t.labelId] })],
 );
@@ -185,7 +211,9 @@ export const taskRefs = sqliteTable(
   "task_refs",
   {
     id: text("id").primaryKey(),
-    taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
     kind: text("kind", { enum: ["pr", "issue", "commit", "link"] }).notNull(),
     ref: text("ref").notNull(), // a URL, or a commit SHA / #123 when the project has a repo
     title: text("title"),
@@ -198,8 +226,12 @@ export const taskRefs = sqliteTable(
 export const taskDeps = sqliteTable(
   "task_deps",
   {
-    taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
-    dependsOnId: text("depends_on_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    dependsOnId: text("depends_on_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
   },
   (t) => [primaryKey({ columns: [t.taskId, t.dependsOnId] })],
 );
@@ -209,7 +241,9 @@ export const timeEntries = sqliteTable(
   "time_entries",
   {
     id: text("id").primaryKey(),
-    taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
     startedAt: ms("started_at").notNull(),
     endedAt: ms("ended_at"),
   },
@@ -221,7 +255,9 @@ export const dayPlans = sqliteTable(
   "day_plans",
   {
     date: text("date").notNull(), // YYYY-MM-DD
-    taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
     sort: integer("sort").notNull().default(0),
     carried: integer("carried", { mode: "boolean" }).notNull().default(false), // came over from an earlier day
   },
@@ -239,7 +275,9 @@ export const dayReviews = sqliteTable("day_reviews", {
 export const templates = sqliteTable("templates", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  type: text("type", { enum: ["code", "design", "general"] }).notNull().default("general"),
+  type: text("type", { enum: ["code", "design", "general"] })
+    .notNull()
+    .default("general"),
   kind: text("kind"),
   title: text("title").notNull(),
   description: text("description"),
@@ -254,10 +292,14 @@ export const subscriptions = sqliteTable("subscriptions", {
   category: text("category").notNull().default("other"), // lib/domain/subscriptions.ts
   amount: integer("amount").notNull(),
   currency: text("currency").notNull().default("USD"),
-  cycle: text("cycle", { enum: ["weekly", "monthly", "quarterly", "yearly"] }).notNull().default("monthly"),
+  cycle: text("cycle", { enum: ["weekly", "monthly", "quarterly", "yearly"] })
+    .notNull()
+    .default("monthly"),
   nextDue: text("next_due").notNull(),
   billingDay: integer("billing_day").notNull(), // day of month it bills on, kept through short months
-  status: text("status", { enum: ["active", "paused", "cancelled"] }).notNull().default("active"),
+  status: text("status", { enum: ["active", "paused", "cancelled"] })
+    .notNull()
+    .default("active"),
   projectId: text("project_id").references(() => projects.id), // paid for a client or project
   url: text("url"), // where to manage or cancel it
   paymentMethod: text("payment_method"), // e.g. "Visa ending 4242"
@@ -270,13 +312,26 @@ export const subscriptionPayments = sqliteTable(
   "subscription_payments",
   {
     id: text("id").primaryKey(),
-    subscriptionId: text("subscription_id").notNull().references(() => subscriptions.id, { onDelete: "cascade" }),
+    subscriptionId: text("subscription_id")
+      .notNull()
+      .references(() => subscriptions.id, { onDelete: "cascade" }),
     paidOn: text("paid_on").notNull(),
     dueOn: text("due_on").notNull(),
     amount: integer("amount").notNull(),
     currency: text("currency").notNull(),
   },
   (t) => [index("sub_payments_sub_idx").on(t.subscriptionId)],
+);
+
+/** Wrong passcodes, for the sign-in lockout in lib/domain/login-limit.ts. Cleared on a correct one and after a day. */
+export const loginFailures = sqliteTable(
+  "login_failures",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    ip: text("ip").notNull(),
+    at: integer("at").notNull(),
+  },
+  (t) => [index("login_failures_at_idx").on(t.at)],
 );
 
 export const settings = sqliteTable("settings", {

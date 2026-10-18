@@ -16,7 +16,12 @@ export default defineConfig({
   use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure", screenshot: "only-on-failure" },
   projects: [
     { name: "login", testMatch: /login\.setup\.ts/ },
-    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 900 }, storageState: "e2e/.tmp/session.json" }, dependencies: ["login"] },
+    {
+      name: "desktop",
+      testIgnore: /lockout\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 900 }, storageState: "e2e/.tmp/session.json" },
+      dependencies: ["login"],
+    },
     // phones only run the page checks; the flows are the same code at any width
     {
       name: "phone",
@@ -24,6 +29,7 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: "e2e/.tmp/session.json" },
       dependencies: ["desktop"],
     },
+    { name: "lockout", testMatch: /lockout\.spec\.ts/, use: { ...devices["Desktop Chrome"] }, dependencies: ["phone"] },
   ],
   webServer: {
     command: "bash e2e/start.sh",
