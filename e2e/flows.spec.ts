@@ -67,7 +67,7 @@ test("a dev released task stops being late, takes QA bugs and a prod date", asyn
   // dev released: no longer late, the wait counts instead, and the miss is noted quietly
   await page.getByLabel(`Stage of ${title}`).first().selectOption("dev_released");
   await expect(page.locator("main").getByText("Dev released today")).toBeVisible();
-  await expect(page.locator("main").getByText("3 days late", { exact: true })).toBeVisible();
+  await expect(page.locator("main").getByText(/^Due .*, 3 days late$/)).toBeVisible();
   await expect(page.locator("main").getByText(/^Was due /)).toHaveCount(0);
 
   // QA finds a bug: it's a bug fix subtask, counted on the card
@@ -77,6 +77,12 @@ test("a dev released task stops being late, takes QA bugs and a prod date", asyn
   await expect(page.getByText("1 QA bug to fix", { exact: false })).toBeVisible();
 
   // the client's date replaces the wait, and goes red only once it's missed
+  // it really reached dev on its due date: correcting the date clears the late note
+  await page.getByLabel("Dev released on").fill(day(-3));
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator("main").getByText(/^Dev released .* · 3 days$/)).toBeVisible();
+  await expect(page.locator("main").getByText(/days late$/)).toHaveCount(0);
+
   await page.getByLabel("Prod date").fill(day(-1));
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.locator("main").getByText("Prod was due Yesterday")).toBeVisible();

@@ -7,6 +7,7 @@ import { LabelChip } from "@/components/task/sections";
 import { KindIcon } from "./kind-icon";
 import { aboveCard, CardLink, TaskCard } from "./task-card";
 import { DueMarks } from "./due-marks";
+import { Meta } from "./meta";
 import { TaskMarkdown } from "./markdown";
 import { PriorityMark } from "./priority";
 import { StageSelect } from "./stage-select";
@@ -46,19 +47,27 @@ export function TaskRow({ task, stages, repo, today, waitDays, color, labels = [
             {task.priority ? <PriorityMark priority={task.priority as Priority} withLabel /> : null}
             {blocked || task.blocker ? <span className="font-medium text-danger">Blocked</span> : null}
             {qa ? (
-              <span className="font-semibold text-danger">
+              <Meta icon="bug" title="Bugs QA sent back, still to fix. They're subtasks of this task." className="font-semibold text-danger">
                 {bugs} QA {bugs === 1 ? "bug" : "bugs"}
-              </span>
+              </Meta>
             ) : null}
             <DueMarks marks={dueMarks(task, today, { waitDays, since })} />
             {progress && progress.total ? (
-              <span className="tabular" title="Subtasks and checklist items done">
+              <Meta icon="progress" label="Subtasks and checklist done" title={`${progress.done} of ${progress.total} subtasks and checklist items done`} className="tabular">
                 {progress.done}/{progress.total}
-              </span>
+              </Meta>
             ) : null}
-            {task.estimateMin ? <span className="tabular">{formatMinutes(task.estimateMin)}</span> : null}
+            {task.estimateMin ? (
+              <Meta icon="estimate" label="Estimate" title="Estimate" className="tabular">
+                {formatMinutes(task.estimateMin)}
+              </Meta>
+            ) : null}
             {task.recur ? <span>{describeRecur(task.recur)}</span> : null}
-            {task.ticket ? <span className="tabular">{task.ticket}</span> : null}
+            {task.ticket ? (
+              <Meta icon="ticket" label="Ticket" title="Ticket" className="tabular">
+                {task.ticket}
+              </Meta>
+            ) : null}
             {type === "design" && task.revision != null ? <span>Round {task.revision}</span> : null}
             {type === "design" && task.assets != null ? (
               <span>

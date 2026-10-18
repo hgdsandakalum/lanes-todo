@@ -1,11 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { dueMarks, isOverdue, onTime, prodWait, releasedLate, waitingMark } from "./due";
+import { dueMarks as marksOf, isOverdue, onTime, prodWait, releasedLate, waitingMark, type DatedTask } from "./due";
 
 const today = "2026-10-19";
 const at = (day: string) => new Date(`${day}T06:00:00Z`); // midday in Colombo
 const base = { type: "code", stage: "in_progress", due: "2026-10-16", prodDate: null, devReleasedAt: null, closedAt: null };
 const opts = { waitDays: 7 };
+// text and tone; icons and hover titles are checked where they matter
+const dueMarks = (t: DatedTask, day: string, o: Parameters<typeof marksOf>[2]) => marksOf(t, day, o).map(({ text, tone }) => ({ text, tone }));
 
 test("before dev release the due date is the deadline", () => {
   assert.deepEqual(dueMarks(base, today, opts), [{ text: "Was due Fri 16 Oct", tone: "danger" }]);
@@ -38,7 +40,8 @@ test("a prod date from the client replaces the wait and goes red only once misse
 test("a late dev release keeps a quiet note", () => {
   const t = { ...base, stage: "dev_released", due: "2026-10-14", devReleasedAt: at("2026-10-16") };
   assert.equal(releasedLate(t), 2);
-  assert.deepEqual(dueMarks(t, today, opts)[1], { text: "2 days late", tone: "muted" });
+  assert.equal(marksOf(t, today, opts)[1].title, "Reached dev 2 days after its due date.");
+  assert.deepEqual(dueMarks(t, today, opts)[1], { text: "Due Wed 14 Oct, 2 days late", tone: "muted" });
   assert.equal(releasedLate({ ...t, due: "2026-10-16" }), null);
   assert.deepEqual(onTime([t, { ...t, due: "2026-10-16" }, { ...t, due: null }]), { dated: 2, met: 1 });
 });

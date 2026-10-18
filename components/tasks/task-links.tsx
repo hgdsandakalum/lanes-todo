@@ -1,4 +1,5 @@
 import { branchLinks, branchList, safeHttpUrl } from "@/lib/domain/repo";
+import { Icon } from "./meta";
 
 const linkCls = "underline decoration-line underline-offset-4 hover:text-ink hover:decoration-ink";
 
@@ -21,13 +22,16 @@ export function TaskLinks({ branch, link, repo, shipped = false }: { branch: str
         const links = repo ? branchLinks(repo, b) : null;
         if (!links)
           return (
-            <span key={b} className="tabular" title={repo ? undefined : "Link the project's repo to make this a link"}>
+            <span key={b} className="tabular inline-flex items-center gap-1.5" title={repo ? "Branch" : "Branch. Link the project's repo to make this a link"}>
+              <Icon name="branch" />
+              <span className="sr-only">Branch: </span>
               {b}
             </span>
           );
         return (
-          <span key={b} className="inline-flex flex-wrap items-baseline gap-x-2">
-            <a href={links.tree} target="_blank" rel="noreferrer" className={`tabular ${linkCls}`}>
+          <span key={b} className="inline-flex flex-wrap items-center gap-x-2">
+            <Icon name="branch" />
+            <a href={links.tree} title="Branch" target="_blank" rel="noreferrer" className={`tabular ${linkCls}`}>
               {b}
             </a>
             {!href && !shipped ? (
@@ -40,9 +44,12 @@ export function TaskLinks({ branch, link, repo, shipped = false }: { branch: str
         );
       })}
       {href ? (
-        <a href={href} target="_blank" rel="noreferrer" className={`max-w-full truncate ${linkCls}`}>
-          {shortUrl(href)}
-        </a>
+        <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
+          <Icon name="link" />
+          <a href={href} target="_blank" rel="noreferrer" title="Spec or main link" className={`min-w-0 truncate ${linkCls}`}>
+            {shortUrl(href)}
+          </a>
+        </span>
       ) : null}
     </>
   );

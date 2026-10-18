@@ -5,6 +5,7 @@ import { type Priority, closingStage, FINISHED_FOR_ME, codeKind, stagesFor, task
 import { KindIcon } from "@/components/tasks/kind-icon";
 import { taskHref, type RowExtras } from "@/components/tasks/task-row";
 import { DueMarks } from "@/components/tasks/due-marks";
+import { Meta } from "@/components/tasks/meta";
 import Link from "next/link";
 import { BOARD_CLOSED_DAYS } from "@/lib/domain/releases";
 import { StageSelect } from "@/components/tasks/stage-select";
@@ -54,9 +55,9 @@ export function Boards({ project, tasks, types, today, extras = {} }: { project:
                           <p className="mt-1 flex flex-wrap gap-x-2.5 gap-y-1 text-xs text-muted">
                             {t.priority ? <PriorityMark priority={t.priority as Priority} /> : null}
                             {extras[t.id]?.bugs && FINISHED_FOR_ME.has(t.stage) ? (
-                              <span className="font-semibold text-danger">
+                              <Meta icon="bug" title="Bugs QA sent back, still to fix" className="font-semibold text-danger">
                                 {extras[t.id].bugs} QA {extras[t.id].bugs === 1 ? "bug" : "bugs"}
-                              </span>
+                              </Meta>
                             ) : null}
                             <DueMarks marks={dueMarks(t, today, { waitDays: project.prodWaitDays, since: extras[t.id]?.since })} />
                             <TaskLinks branch={t.branch} link={t.link} repo={project.repo} shipped={t.closedAt != null} />

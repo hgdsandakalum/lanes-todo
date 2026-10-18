@@ -3,7 +3,7 @@ import { eq, inArray, or } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db, schema as s } from "@/lib/db/client";
 import { requireSession } from "@/lib/auth/session";
-import { isYmd, zonedTime } from "@/lib/domain/dates";
+import { isYmd, ymd, zonedTime } from "@/lib/domain/dates";
 import { parseDuration } from "@/lib/domain/estimate";
 import { ruleFrom } from "@/lib/domain/recur";
 import { DESCRIPTION_MAX, TITLE_MAX } from "@/lib/domain/quick-add";
@@ -60,6 +60,7 @@ export async function updateTask(_: FormState, form: FormData): Promise<FormStat
   const type = field(form, "type") as TaskType;
   const due = field(form, "due");
   const prodDate = field(form, "prodDate");
+  const devReleasedOn = field(form, "devReleasedOn"); // corrects when it reached dev; only sent once it has
   const ticket = field(form, "ticket");
   const branches = parseBranches(field(form, "branch"));
   const link = field(form, "link");
@@ -82,6 +83,8 @@ export async function updateTask(_: FormState, form: FormData): Promise<FormStat
   if (!TASK_TYPES.includes(type)) return { error: "Pick Code, Design or General." };
   if (due && !isYmd(due)) return { error: "The due date isn't a real date." };
   if (prodDate && !isYmd(prodDate)) return { error: "The prod date isn't a real date." };
+  if (devReleasedOn && !isYmd(devReleasedOn)) return { error: "The dev release date isn't a real date." };
+  if (devReleasedOn && devReleasedOn > ymd()) return { error: "The dev release date can't be in the future." };
   if (ticket.length > 50) return { error: "Keep the ticket ID under 50 characters." };
   if (type === "code" && !branches.ok) return { error: branches.error };
   if (kindInput && !CODE_KINDS.includes(kindInput as CodeKind)) return { error: "Pick a kind of code work." };
@@ -98,6 +101,8 @@ export async function updateTask(_: FormState, form: FormData): Promise<FormStat
   }
 
   const kind = codeKind(type, kindInput || "feature");
+  // a corrected dev release day is stored at midday, app time
+  const releasedAt = devReleasedOn && task.devReleasedAt && devReleasedOn !== ymd(task.devReleasedAt) ? zonedTime(devReleasedOn, "12:00") : task.devReleasedAt;
   const fields = kind ? KIND_FIELDS[kind] : [];
   const stageKept = stagesFor(type, hasStaging, kind).some((st) => st.key === task.stage);
   const stage = stageKept ? task.stage : "todo";
@@ -127,7 +132,7 @@ export async function updateTask(_: FormState, form: FormData): Promise<FormStat
       revision: type === "design" ? revision : null,
       link: link ? safeHttpUrl(link) : null,
       stage,
-      ...stageDates(type, stage, task, new Date(), kind),
+      ...stageDates(type, stage, { ...task, devReleasedAt: releasedAt }, new Date(), kind),
     })
     .where(eq(s.tasks.id, task.id));
 

@@ -6,6 +6,7 @@ import { Field, inputCls, primaryBtn, quietBtn } from "@/components/projects/fie
 import { DescriptionField } from "@/components/tasks/markdown";
 import { deleteTask, updateTask, type FormState } from "@/lib/actions/tasks";
 import { DESCRIPTION_MAX } from "@/lib/domain/quick-add";
+import { ymd } from "@/lib/domain/dates";
 import { formatMinutes } from "@/lib/domain/estimate";
 import { describeRecur } from "@/lib/domain/recur";
 import {
@@ -88,6 +89,11 @@ export function TaskEditor({ task, hasStaging, remindAt, backHref }: { task: Tas
       <Field label="Due" id={id("due")} hint={shipsToProd(type, kind) ? "When it should reach dev. Once dev released, it stops counting as late." : undefined}>
         <input id={id("due")} name="due" type="date" defaultValue={task.due ?? ""} className={inputCls} />
       </Field>
+      {type === "code" && task.devReleasedAt ? (
+        <Field label="Dev released on" id={id("devReleasedOn")} hint="Set when the stage moved to Dev released. Change it if you released earlier.">
+          <input id={id("devReleasedOn")} name="devReleasedOn" type="date" max={ymd()} defaultValue={ymd(task.devReleasedAt)} className={inputCls} />
+        </Field>
+      ) : null}
       {shipsToProd(type, kind) ? (
         <Field label="Prod date" id={id("prodDate")} hint="The release date the client gives after their QA. Leave empty until then.">
           <input id={id("prodDate")} name="prodDate" type="date" defaultValue={task.prodDate ?? ""} className={inputCls} />

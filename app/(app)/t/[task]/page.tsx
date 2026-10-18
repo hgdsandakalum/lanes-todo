@@ -10,6 +10,7 @@ import { editorUrl } from "@/lib/domain/folders";
 import { describeRecur } from "@/lib/domain/recur";
 import { codeKind, FIELD_LABEL, FINISHED_FOR_ME, KIND_FIELDS, shipsToProd, stagesFor, taskKindLabel, type Priority, type TaskType } from "@/lib/domain/stages";
 import { DueMarks } from "@/components/tasks/due-marks";
+import { Meta } from "@/components/tasks/meta";
 import { KindIcon } from "@/components/tasks/kind-icon";
 import { TaskMarkdown } from "@/components/tasks/markdown";
 import { ProjectTag } from "@/components/tasks/project-tag";
@@ -77,10 +78,18 @@ async function TaskView({ params }: { params: PageProps<"/t/[task]">["params"] }
           <span>{taskKindLabel(type, t.kind)}</span>
           {t.priority ? <PriorityMark priority={t.priority as Priority} withLabel /> : null}
           <DueMarks marks={dueMarks(t, today, { waitDays: p.prodWaitDays, since })} />
-          {t.estimateMin ? <span className="tabular">Estimate {formatMinutes(t.estimateMin)}</span> : null}
+          {t.estimateMin ? (
+            <Meta icon="estimate" className="tabular">
+              Estimate {formatMinutes(t.estimateMin)}
+            </Meta>
+          ) : null}
           {t.recur ? <span>{describeRecur(t.recur)}</span> : null}
           {t.remindAt ? <span title="Reminders arrive on your phone once Lanes is deployed">Reminder {localInput(t.remindAt).replace("T", " ")}</span> : null}
-          {t.ticket ? <span className="tabular">{t.ticket}</span> : null}
+          {t.ticket ? (
+            <Meta icon="ticket" label="Ticket" title="Ticket" className="tabular">
+              {t.ticket}
+            </Meta>
+          ) : null}
           <TaskLinks branch={t.branch} link={t.link} repo={p.repo} shipped={t.closedAt != null} />
           {p.localPath && !finished ? (
             <a href={editorUrl(p.localPath)} title={p.localPath} className="underline decoration-line underline-offset-4 hover:text-ink">

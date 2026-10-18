@@ -9,7 +9,8 @@ import { FINISHED_FOR_ME } from "./stages";
  */
 
 export type Tone = "danger" | "warn" | "muted" | "plain";
-export type Mark = { text: string; tone: Tone };
+/** `icon` names a meta icon (components/tasks/meta.tsx); `title` says in words what the mark means, for hover. */
+export type Mark = { text: string; tone: Tone; icon: "due" | "dev" | "wait" | "prod"; title: string };
 
 export type DatedTask = {
   type: string;
@@ -21,8 +22,12 @@ export type DatedTask = {
 };
 
 const days = (n: number) => (n === 1 ? "1 day" : `${n} days`);
-const released = (w: { devDay: string; waited: number }, today: string) =>
-  w.waited === 0 ? "Dev released today" : w.waited === 1 ? "Dev released yesterday" : `Dev released ${formatShort(w.devDay, today)} · ${days(w.waited)}`;
+const released = (w: { devDay: string; waited: number }, today: string): Mark => ({
+  text: w.waited === 0 ? "Dev released today" : w.waited === 1 ? "Dev released yesterday" : `Dev released ${formatShort(w.devDay, today)} · ${days(w.waited)}`,
+  tone: "muted",
+  icon: "dev",
+  title: `Released to dev ${w.waited === 0 ? "today" : `${days(w.waited)} ago`}, waiting for QA and the client. No prod date yet.`,
+});
 
 /** Design work sent for feedback: the client's move. */
 export const withClient = (t: Pick<DatedTask, "type" | "stage">) => t.type === "design" && t.stage === "feedback";
@@ -56,9 +61,22 @@ export function prodWait(t: Pick<DatedTask, "devReleasedAt" | "prodDate">, today
 export function waitingMark(t: Pick<DatedTask, "devReleasedAt" | "prodDate">, today: string, waitDays: number): Mark {
   const w = prodWait(t, today, waitDays);
   if (t.prodDate)
-    return w.flag === "late" ? { text: `Prod was due ${formatShort(t.prodDate, today)}`, tone: "danger" } : { text: `Prod ${formatShort(t.prodDate, today)}`, tone: "plain" };
-  if (w.flag === "long") return { text: `Waiting ${days(w.waited)}, over the ${waitDays}-day limit`, tone: "warn" };
-  return { text: released(w, today), tone: "muted" };
+    return w.flag === "late"
+      ? {
+          text: `Prod was due ${formatShort(t.prodDate, today)}`,
+          tone: "danger",
+          icon: "prod",
+          title: "The production date the client gave has passed, and it isn't in production yet.",
+        }
+      : { text: `Prod ${formatShort(t.prodDate, today)}`, tone: "plain", icon: "prod", title: "The production release date the client gave." };
+  if (w.flag === "long")
+    return {
+      text: `Waiting ${days(w.waited)}, over the ${waitDays}-day limit`,
+      tone: "warn",
+      icon: "wait",
+      title: `Dev released ${days(w.waited)} ago with no prod date yet: worth asking the client.`,
+    };
+  return released(w, today);
 }
 
 /** What a task card shows about its dates, in order. `since` is when design work was sent for feedback, if known. */
@@ -70,16 +88,23 @@ export function dueMarks(t: DatedTask, today: string, opts: { waitDays: number; 
     const main: Mark = t.prodDate
       ? waitingMark(t, today, opts.waitDays)
       : w.flag === "long"
-        ? { text: `Waiting ${days(w.waited)}`, tone: "warn" }
-        : { text: released(w, today), tone: "muted" };
-    return late ? [main, { text: `${days(late)} late`, tone: "muted" }] : [main];
+        ? { ...waitingMark(t, today, opts.waitDays), text: `Waiting ${days(w.waited)}` }
+        : released(w, today);
+    return late
+      ? [main, { text: `Due ${formatShort(t.due!, today)}, ${days(late)} late`, tone: "muted", icon: "due", title: `Reached dev ${days(late)} after its due date.` }]
+      : [main];
   }
   if (withClient(t)) {
     const n = opts.since ? daysBetween(ymd(opts.since), today) : null;
-    return [{ text: n ? `With client ${days(n)}` : "With client", tone: "muted" }];
+    return [{ text: n ? `With client ${days(n)}` : "With client", tone: "muted", icon: "wait", title: "Sent for feedback: waiting on the client." }];
   }
   if (t.due == null || FINISHED_FOR_ME.has(t.stage)) return [];
-  return [t.due < today ? { text: `Was due ${formatShort(t.due, today)}`, tone: "danger" } : { text: `Due ${formatShort(t.due, today)}`, tone: "plain" }];
+  const what = t.type === "code" ? "Due in dev" : "Due";
+  return [
+    t.due < today
+      ? { text: `Was due ${formatShort(t.due, today)}`, tone: "danger", icon: "due", title: `${what} ${formatShort(t.due, today)}: ${days(daysBetween(t.due, today))} overdue.` }
+      : { text: `Due ${formatShort(t.due, today)}`, tone: "plain", icon: "due", title: `${what} ${formatShort(t.due, today)}.` },
+  ];
 }
 
 /** Of the dev released tasks given, how many had a due date and how many met it. */
