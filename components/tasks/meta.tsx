@@ -67,3 +67,16 @@ export function Meta({ icon, title, label, className = "", children }: { icon: M
     </span>
   );
 }
+
+/** A task's ticket ID as its own badge beside the title, so it stands out from the details. */
+export function TicketBadge({ ticket, large = false, className = "" }: { ticket: string; large?: boolean; className?: string }) {
+  return (
+    <span
+      title="Ticket"
+      className={`tabular inline-flex shrink-0 items-center rounded-full border border-queen/40 bg-queen-fill/15 font-semibold text-queen ${large ? "px-3 py-0.5 text-lg" : "px-2 py-px text-xs leading-5"} ${className}`}
+    >
+      <span className="sr-only">Ticket </span>
+      {ticket}
+    </span>
+  );
+}

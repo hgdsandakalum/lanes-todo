@@ -5,7 +5,7 @@ import { type Priority, closingStage, FINISHED_FOR_ME, codeKind, stagesFor, task
 import { KindIcon } from "@/components/tasks/kind-icon";
 import { taskHref, type RowExtras } from "@/components/tasks/task-row";
 import { DueMarks } from "@/components/tasks/due-marks";
-import { Meta } from "@/components/tasks/meta";
+import { Meta, TicketBadge } from "@/components/tasks/meta";
 import Link from "next/link";
 import { BOARD_CLOSED_DAYS } from "@/lib/domain/releases";
 import { StageSelect } from "@/components/tasks/stage-select";
@@ -49,7 +49,8 @@ export function Boards({ project, tasks, types, today, extras = {} }: { project:
                     <ul className="flex flex-col gap-2 p-2">
                       {cards.map((t) => (
                         <li key={t.id} className={`rounded-sm border border-line p-3 ${isWaiting(t) ? "border-dashed bg-sunk" : "bg-surface"} ${closing ? "opacity-70" : ""}`}>
-                          <Link href={taskHref(t.id)} className="text-sm font-medium leading-snug hover:underline">
+                          {t.ticket ? <TicketBadge ticket={t.ticket} className="mb-1.5" /> : null}
+                          <Link href={taskHref(t.id)} className="block text-sm font-medium leading-snug hover:underline">
                             {t.title}
                           </Link>
                           <p className="mt-1 flex flex-wrap gap-x-2.5 gap-y-1 text-xs text-muted">

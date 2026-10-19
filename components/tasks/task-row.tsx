@@ -7,7 +7,7 @@ import { LabelChip } from "@/components/task/sections";
 import { KindIcon } from "./kind-icon";
 import { aboveCard, CardLink, TaskCard } from "./task-card";
 import { DueMarks } from "./due-marks";
-import { Meta } from "./meta";
+import { Meta, TicketBadge } from "./meta";
 import { TaskMarkdown } from "./markdown";
 import { PriorityMark } from "./priority";
 import { StageSelect } from "./stage-select";
@@ -40,6 +40,7 @@ export function TaskRow({ task, stages, repo, today, waitDays, color, labels = [
         <div className="min-w-0">
           <p className="flex items-start gap-2 font-medium leading-snug">
             <KindIcon type={type} kind={task.kind} className="mt-0.5 size-4 text-muted" />
+            {task.ticket ? <TicketBadge ticket={task.ticket} /> : null}
             <CardLink id={task.id}>{task.title}</CardLink>
           </p>
           <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 pl-6 text-sm text-muted [&_a]:relative [&_a]:z-10">
@@ -63,11 +64,6 @@ export function TaskRow({ task, stages, repo, today, waitDays, color, labels = [
               </Meta>
             ) : null}
             {task.recur ? <span>{describeRecur(task.recur)}</span> : null}
-            {task.ticket ? (
-              <Meta icon="ticket" label="Ticket" title="Ticket" className="tabular">
-                {task.ticket}
-              </Meta>
-            ) : null}
             {type === "design" && task.revision != null ? <span>Round {task.revision}</span> : null}
             {type === "design" && task.assets != null ? (
               <span>
