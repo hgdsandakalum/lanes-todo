@@ -7,7 +7,7 @@ import { isYmd, ymd, zonedTime } from "@/lib/domain/dates";
 import { parseDuration } from "@/lib/domain/estimate";
 import { ruleFrom } from "@/lib/domain/recur";
 import { DESCRIPTION_MAX, TITLE_MAX } from "@/lib/domain/quick-add";
-import { parseBranches, safeHttpUrl } from "@/lib/domain/repo";
+import { parseBranches, safeHttpUrl, withTicketBranch } from "@/lib/domain/repo";
 import {
   CODE_KINDS,
   KIND_FIELDS,
@@ -106,6 +106,8 @@ export async function updateTask(_: FormState, form: FormData): Promise<FormStat
   const fields = kind ? KIND_FIELDS[kind] : [];
   const stageKept = stagesFor(type, hasStaging, kind).some((st) => st.key === task.stage);
   const stage = stageKept ? task.stage : "todo";
+  // a bug or feature with a ticket gets its branch named after it, e.g. bugfix/t-206
+  const branch = type === "code" && branches.ok ? withTicketBranch(branches.branches, { kind: codeKind(task.type, task.kind), ticket: task.ticket }, { kind, ticket }).join(" ") || null : null;
   const update = db
     .update(s.tasks)
     .set({
@@ -127,7 +129,7 @@ export async function updateTask(_: FormState, form: FormData): Promise<FormStat
       prodDate: shipsToProd(type, kind) ? prodDate || null : null,
       // fields that belong to another type are cleared, so they can't resurface on a type switch back
       ticket: type === "code" ? ticket || null : null,
-      branch: type === "code" && branches.ok ? branches.branches.join(" ") || null : null,
+      branch,
       assets: type === "design" ? assets : null,
       revision: type === "design" ? revision : null,
       link: link ? safeHttpUrl(link) : null,

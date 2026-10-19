@@ -54,6 +54,28 @@ export function parseBranches(input: string): { ok: true; branches: string[] } |
   return { ok: true, branches };
 }
 
+const TICKET_BRANCH_PREFIX: Partial<Record<string, string>> = { bug: "bugfix", feature: "feature" };
+
+/** The branch a ticket gets by default: a bug on T-206 is "bugfix/t-206", a feature "feature/t-206". Null for other kinds. */
+export function ticketBranch(kind: string | null, ticket: string | null): string | null {
+  const prefix = kind && TICKET_BRANCH_PREFIX[kind];
+  const name = (ticket ?? "").trim().toLowerCase().replace(/\s+/g, "-");
+  if (!prefix || !name) return null;
+  const branch = `${prefix}/${name}`;
+  return isValidBranch(branch) ? branch : null;
+}
+
+/**
+ * Keeps a task's ticket branch in step with its ticket and kind. The old ticket's branch, if still listed, is dropped,
+ * and the new ticket's branch is added when that leaves no branches, so a branch typed by hand is never replaced.
+ */
+export function withTicketBranch(branches: string[], before: { kind: string | null; ticket: string | null }, after: { kind: string | null; ticket: string | null }): string[] {
+  const old = ticketBranch(before.kind, before.ticket);
+  const next = ticketBranch(after.kind, after.ticket);
+  const kept = old && old !== next ? branches.filter((b) => b !== old) : branches;
+  return kept.length || !next ? kept : [next];
+}
+
 const encBranch = (b: string) => b.split("/").map(encodeURIComponent).join("/");
 
 /**

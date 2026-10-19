@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { branchLinks, branchList, isValidBranch, normalizeRepo, parseBranches, safeHttpUrl } from "./repo";
+import { branchLinks, branchList, isValidBranch, normalizeRepo, parseBranches, safeHttpUrl, ticketBranch, withTicketBranch } from "./repo";
 
 test("normalizeRepo accepts the usual ways of writing a repo", () => {
   const gh = "https://github.com/softsora/gaku";
@@ -44,4 +44,26 @@ test("parseBranches and branchList", () => {
   assert.equal(parseBranches(Array.from({ length: 11 }, (_, i) => `b${i}`).join(" ")).ok, false);
   assert.deepEqual(branchList("feat/a fix/b"), ["feat/a", "fix/b"]);
   assert.deepEqual(branchList(null), []);
+});
+
+test("ticketBranch names bug and feature branches after the ticket", () => {
+  assert.equal(ticketBranch("bug", "T-206"), "bugfix/t-206");
+  assert.equal(ticketBranch("feature", " T-206 "), "feature/t-206");
+  assert.equal(ticketBranch("feature", "GK 12"), "feature/gk-12");
+  assert.equal(ticketBranch("refactor", "T-206"), null);
+  assert.equal(ticketBranch("bug", ""), null);
+  assert.equal(ticketBranch("bug", "T..206"), null);
+});
+
+test("withTicketBranch follows the ticket without replacing hand-typed branches", () => {
+  const none = { kind: "bug", ticket: null };
+  assert.deepEqual(withTicketBranch([], none, { kind: "bug", ticket: "T-206" }), ["bugfix/t-206"]);
+  assert.deepEqual(withTicketBranch(["fix/login"], none, { kind: "bug", ticket: "T-206" }), ["fix/login"]);
+  // the ticket or kind changes: the generated branch moves with it
+  assert.deepEqual(withTicketBranch(["bugfix/t-206"], { kind: "bug", ticket: "T-206" }, { kind: "bug", ticket: "T-207" }), ["bugfix/t-207"]);
+  assert.deepEqual(withTicketBranch(["bugfix/t-206"], { kind: "bug", ticket: "T-206" }, { kind: "feature", ticket: "T-206" }), ["feature/t-206"]);
+  assert.deepEqual(withTicketBranch(["bugfix/t-206", "fix/api"], { kind: "bug", ticket: "T-206" }, { kind: "bug", ticket: "T-207" }), ["fix/api"]);
+  // the ticket is cleared: its branch goes too
+  assert.deepEqual(withTicketBranch(["bugfix/t-206"], { kind: "bug", ticket: "T-206" }, { kind: "bug", ticket: "" }), []);
+  assert.deepEqual(withTicketBranch(["bugfix/t-206"], { kind: "bug", ticket: "T-206" }, { kind: "bug", ticket: "T-206" }), ["bugfix/t-206"]);
 });

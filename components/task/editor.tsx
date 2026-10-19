@@ -126,7 +126,7 @@ export function TaskEditor({ task, hasStaging, remindAt, backHref }: { task: Tas
           <Field label="Ticket" id={id("ticket")}>
             <input id={id("ticket")} name="ticket" defaultValue={task.ticket ?? ""} maxLength={50} placeholder="GK-123" className={`tabular ${inputCls}`} />
           </Field>
-          <Field label="Branches" id={id("branch")}>
+          <Field label="Branches" id={id("branch")} hint={kind === "bug" || kind === "feature" ? `Leave empty to name it after the ticket, e.g. ${kind === "bug" ? "bugfix" : "feature"}/t-206.` : undefined}>
             <input id={id("branch")} name="branch" defaultValue={task.branch ?? ""} placeholder="feat/gk-login fix/gk-redirect" spellCheck={false} autoCapitalize="off" autoCorrect="off" className={`tabular ${inputCls}`} />
           </Field>
         </>
