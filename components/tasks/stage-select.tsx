@@ -4,6 +4,14 @@ import { setTaskStage } from "@/lib/actions/tasks";
 import type { Stage } from "@/lib/domain/stages";
 import { announceXp } from "@/components/game/xp-pulse";
 
+/** Stages worth spotting at a glance get a tinted fill; the rest stay plain. */
+const STAGE_COLOR: Partial<Record<string, string>> = {
+  in_progress: "var(--c-sky)",
+  dev_released: "var(--c-violet)",
+  staging: "var(--c-amber)",
+  prod_released: "var(--c-teal)",
+};
+
 /** A task's stage as a dropdown; moves save straight away. */
 export function StageSelect({ taskId, title, stage, stages, className = "" }: { taskId: string; title: string; stage: string; stages: Stage[]; className?: string }) {
   const [shown, setShown] = useOptimistic(stage);
@@ -22,6 +30,8 @@ export function StageSelect({ taskId, title, stage, stages, className = "" }: { 
     });
   }
 
+  const color = STAGE_COLOR[shown];
+
   return (
     <div className={`relative ${className}`}>
       <label className="sr-only" htmlFor={`stage-${taskId}`}>
@@ -31,10 +41,11 @@ export function StageSelect({ taskId, title, stage, stages, className = "" }: { 
         id={`stage-${taskId}`}
         value={shown}
         onChange={(e) => move(e.target.value)}
+        style={color ? { background: `color-mix(in srgb, ${color} 22%, var(--bg))`, borderColor: `color-mix(in srgb, ${color} 60%, transparent)` } : undefined}
         className="w-full cursor-pointer rounded-full border border-line bg-bg py-1 pl-3 pr-2 text-sm hover:border-muted focus:border-queen"
       >
         {stages.map((s) => (
-          <option key={s.key} value={s.key}>
+          <option key={s.key} value={s.key} className="bg-bg">
             {s.label}
           </option>
         ))}
