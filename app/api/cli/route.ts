@@ -5,34 +5,50 @@ import { isSharedBranch, normalizeFolder, projectForFolder, resolveStage, shortI
 import { branchList, isValidBranch, MAX_BRANCHES } from "@/lib/domain/repo";
 import { stageLabel, type TaskType } from "@/lib/domain/stages";
 import { addTask, moveTask } from "@/lib/tasks/core";
+import { loadToday, type TodayTask } from "@/lib/data/today";
+import { addDays, weekday, ymd } from "@/lib/domain/dates";
+import { isOverdue, withClient } from "@/lib/domain/due";
+import { FINISHED_FOR_ME } from "@/lib/domain/stages";
 
 /**
  * The lanes command (bin/lanes.mjs) talks to this one endpoint. It sends the folder it runs in and the
  * current git branch; the server works out the project and task. Auth is a bearer token, LANES_CLI_TOKEN:
  * without it set, the endpoint is off. proxy.ts lets /api/cli through, since the command has no cookie.
+ *
+ * One read-only command, "brief", also takes LANES_BRIEF_TOKEN: a separate key for assistants (the morning
+ * briefing) that can read the day's tasks but can't add, move or link anything.
  */
 
 type Body = { cmd?: string; cwd?: string; root?: string; branch?: string; text?: string; description?: string; code?: string; stage?: string; task?: string };
 
 const digest = (v: string) => createHash("sha256").update(v).digest();
 
-function authorized(req: Request): boolean {
-  const token = process.env.LANES_CLI_TOKEN;
+function matches(sent: string, token: string | undefined): boolean {
   if (!token || token.length < 32) return false;
-  const sent = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
   return timingSafeEqual(digest(sent), digest(token));
+}
+
+/** "full" with LANES_CLI_TOKEN, "brief" with LANES_BRIEF_TOKEN (read-only), else null. */
+function access(req: Request): "full" | "brief" | null {
+  const sent = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  if (matches(sent, process.env.LANES_CLI_TOKEN)) return "full";
+  if (matches(sent, process.env.LANES_BRIEF_TOKEN)) return "brief";
+  return null;
 }
 
 const fail = (error: string, status = 400) => Response.json({ error }, { status });
 
 export async function POST(req: Request) {
-  if (!authorized(req)) return fail("Not authorized. Check LANES_CLI_TOKEN in the app and the token in ~/.config/lanes.json.", 401);
+  const level = access(req);
+  if (!level) return fail("Not authorized. Check LANES_CLI_TOKEN in the app and the token in ~/.config/lanes.json.", 401);
   let body: Body;
   try {
     body = await req.json();
   } catch {
     return fail("Send JSON.");
   }
+  if (body.cmd === "brief") return brief();
+  if (level !== "full") return fail("This token can only read the brief.", 403);
   const cwd = normalizeFolder(body.cwd ?? "");
   const branch = body.branch && isValidBranch(body.branch) ? body.branch : null;
   if (!cwd) return fail("The command didn't say which folder it runs in.");
@@ -169,4 +185,65 @@ async function attach(cwd: string, branch: string | null, body: Body) {
     .set({ branch: next.join(" "), ...(becomesCode ? { type: "code" as const } : {}) })
     .where(eq(s.tasks.id, task.id));
   return Response.json({ id: shortId(task.id), title: task.title, branches: next });
+}
+
+/** A task in the brief: just enough to plan the day, kept small for assistants. */
+const brieft = (t: TodayTask) => ({
+  id: shortId(t.id),
+  title: t.title,
+  where: `${t.workspaceName} / ${t.projectName}`,
+  type: t.type,
+  stage: stageLabel(t.type as TaskType, t.stage, t.kind),
+  ...(t.priority ? { priority: t.priority } : {}),
+  ...(t.due ? { due: t.due } : {}),
+  ...(t.prodDate ? { prodDate: t.prodDate } : {}),
+  ...(t.blocker ? { blocker: t.blocker } : {}),
+});
+
+const RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+
+/** The day at a glance, read-only: deep task, weekly three, overdue, due soon, in progress, urgent, waiting on others, routines. */
+async function brief() {
+  const today = ymd();
+  const t = await loadToday(today);
+  const open = t.pickable; // open and still yours to finish
+  const listed = new Set<string>();
+  const take = (list: TodayTask[], max: number) => {
+    const out = list.filter((x) => !listed.has(x.id)).slice(0, max);
+    out.forEach((x) => listed.add(x.id));
+    return out.map(brieft);
+  };
+
+  const overdue = take(open.filter((x) => isOverdue(x, today)).sort((a, b) => a.due!.localeCompare(b.due!)), 15);
+  const dueSoon = take(t.dueSoon.filter((x) => !isOverdue(x, today)), 15);
+  const urgent = take(
+    open.filter((x) => x.priority === "urgent" || x.priority === "high").sort((a, b) => RANK[a.priority!] - RANK[b.priority!]),
+    10,
+  );
+  const inProgress = take(open.filter((x) => x.stage !== "todo" && !FINISHED_FOR_ME.has(x.stage) && !withClient(x)), 15);
+  const blocked = open.filter((x) => x.blocker).slice(0, 10).map((x) => ({ id: shortId(x.id), title: x.title, blocker: x.blocker }));
+
+  const day = weekday(today);
+  const routineRows = await db.select({ title: s.routines.title, weekdays: s.routines.weekdays, items: s.routines.items }).from(s.routines).orderBy(asc(s.routines.sort));
+  const routines = routineRows.filter((r) => r.weekdays.includes(day)).map((r) => ({ title: r.title, items: r.items.length }));
+
+  const perWorkspace: Record<string, number> = {};
+  for (const x of open) perWorkspace[x.workspaceName] = (perWorkspace[x.workspaceName] ?? 0) + 1;
+
+  return Response.json({
+    today,
+    tomorrow: addDays(today, 1),
+    deep: t.deep ? brieft(t.deep) : null,
+    carryOver: t.carry ? brieft(t.carry) : null,
+    weeklyThree: t.slots.map((sl) => ({ workspace: sl.workspace.name, star: sl.star ? brieft(sl.star) : null })),
+    overdue,
+    dueSoon,
+    urgent,
+    inProgress,
+    blocked,
+    waitingOnOthers: t.awaiting.slice(0, 10).map((x) => ({ ...brieft(x), waitedDays: x.waited, ...(x.flag ? { flag: x.flag } : {}) })),
+    designWithClient: open.filter(withClient).slice(0, 10).map(brieft),
+    routinesToday: routines,
+    openCounts: perWorkspace,
+  });
 }

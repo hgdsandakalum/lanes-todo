@@ -15,6 +15,8 @@ const todayTask = {
   type: s.tasks.type,
   kind: s.tasks.kind,
   stage: s.tasks.stage,
+  priority: s.tasks.priority,
+  blocker: s.tasks.blocker,
   due: s.tasks.due,
   prodDate: s.tasks.prodDate,
   branch: s.tasks.branch,
@@ -51,6 +53,11 @@ export const finishedForMe = (t: Pick<TodayTask, "stage">) => FINISHED_FOR_ME.ha
  */
 export async function getToday(day: string) {
   await requireSession();
+  return loadToday(day);
+}
+
+/** getToday without the session check, for callers that check who is asking themselves (the brief in /api/cli). */
+export async function loadToday(day: string) {
   const week = starWeek(day);
   const active = eq(s.projects.status, "active");
 
