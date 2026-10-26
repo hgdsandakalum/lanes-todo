@@ -1,12 +1,12 @@
 import { createHash, timingSafeEqual } from "node:crypto";
-import { and, asc, eq, isNotNull, isNull, like, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNotNull, isNull, like, ne, sql } from "drizzle-orm";
 import { db, schema as s } from "@/lib/db/client";
 import { isSharedBranch, normalizeFolder, projectForFolder, resolveStage, shortId, stageWords } from "@/lib/domain/folders";
 import { branchList, isValidBranch, MAX_BRANCHES } from "@/lib/domain/repo";
 import { stageLabel, type TaskType } from "@/lib/domain/stages";
 import { addTask, moveTask } from "@/lib/tasks/core";
 import { loadToday, type TodayTask } from "@/lib/data/today";
-import { addDays, weekday, ymd } from "@/lib/domain/dates";
+import { addDays, weekday, ymd, zonedTime } from "@/lib/domain/dates";
 import { isOverdue, withClient } from "@/lib/domain/due";
 import { FINISHED_FOR_ME } from "@/lib/domain/stages";
 
@@ -202,7 +202,7 @@ const brieft = (t: TodayTask) => ({
 
 const RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
 
-/** The day at a glance, read-only: deep task, weekly three, overdue, due soon, in progress, urgent, waiting on others, routines. */
+/** The day at a glance, read-only: deep task, weekly three, overdue, due soon, in progress, urgent, waiting on others, done today, routines. */
 async function brief() {
   const today = ymd();
   const t = await loadToday(today);
@@ -227,6 +227,22 @@ async function brief() {
   const routineRows = await db.select({ title: s.routines.title, weekdays: s.routines.weekdays, items: s.routines.items }).from(s.routines).orderBy(asc(s.routines.sort));
   const routines = routineRows.filter((r) => r.weekdays.includes(day)).map((r) => ({ title: r.title, items: r.items.length }));
 
+  // what you finished today: moves into a "your part is done" stage since local midnight, newest first, one per task
+  const since = zonedTime(today, "00:00") ?? new Date(Date.now() - 864e5);
+  const moves = await db
+    .select({ id: s.tasks.id, title: s.tasks.title, type: s.tasks.type, kind: s.tasks.kind, to: s.stageEvents.toStage, project: s.projects.name, workspace: s.workspaces.name })
+    .from(s.stageEvents)
+    .innerJoin(s.tasks, eq(s.stageEvents.taskId, s.tasks.id))
+    .innerJoin(s.projects, eq(s.tasks.projectId, s.projects.id))
+    .innerJoin(s.workspaces, eq(s.projects.workspaceId, s.workspaces.id))
+    .where(gte(s.stageEvents.at, since))
+    .orderBy(desc(s.stageEvents.at));
+  const doneSeen = new Set<string>();
+  const doneToday = moves
+    .filter((m) => FINISHED_FOR_ME.has(m.to) && !doneSeen.has(m.id) && doneSeen.add(m.id))
+    .slice(0, 20)
+    .map((m) => ({ id: shortId(m.id), title: m.title, where: `${m.workspace} / ${m.project}`, stage: stageLabel(m.type as TaskType, m.to, m.kind) }));
+
   const perWorkspace: Record<string, number> = {};
   for (const x of open) perWorkspace[x.workspaceName] = (perWorkspace[x.workspaceName] ?? 0) + 1;
 
@@ -243,6 +259,7 @@ async function brief() {
     blocked,
     waitingOnOthers: t.awaiting.slice(0, 10).map((x) => ({ ...brieft(x), waitedDays: x.waited, ...(x.flag ? { flag: x.flag } : {}) })),
     designWithClient: open.filter(withClient).slice(0, 10).map(brieft),
+    doneToday,
     routinesToday: routines,
     openCounts: perWorkspace,
   });
