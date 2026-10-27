@@ -5,6 +5,7 @@ import { ymd } from "@/lib/domain/dates";
 import { DESCRIPTION_MAX, parseQuickAdd } from "@/lib/domain/quick-add";
 import { nextDate, parseRecur } from "@/lib/domain/recur";
 import { closingStage, stageDates, stagesFor, type CodeKind, type TaskType } from "@/lib/domain/stages";
+import type { TaskEdit } from "@/lib/domain/task-edit";
 import { reconcileTask } from "@/lib/game/engine";
 
 /**
@@ -94,6 +95,26 @@ export async function addTask(input: {
     ...(labelIds.length ? [db.insert(s.taskLabels).values(labelIds.map((labelId) => ({ taskId: id, labelId })))] : []),
   ]);
   return { ok: true, id, project, title: q.title, type, branches };
+}
+
+/** Replaces a task's labels, then tidies away labels no task uses any more. */
+export async function replaceLabels(taskId: string, names: string[]) {
+  const ids = await ensureLabels(names);
+  await db.batch([
+    db.delete(s.taskLabels).where(eq(s.taskLabels.taskId, taskId)),
+    ...(ids.length ? [db.insert(s.taskLabels).values(ids.map((labelId) => ({ taskId, labelId })))] : []),
+  ]);
+  await db.delete(s.labels).where(sql`${s.labels.id} not in (select ${s.taskLabels.labelId} from ${s.taskLabels})`);
+}
+
+/** Applies a parsed partial edit (lib/domain/task-edit.ts) and settles the task's XP. */
+export async function editTask(task: typeof s.tasks.$inferSelect, edit: TaskEdit): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { labels, ...fields } = edit;
+  if (fields.due === null && task.recur) return { ok: false, error: "A repeating task needs a due date to count from." };
+  if (Object.keys(fields).length) await db.update(s.tasks).set(fields).where(eq(s.tasks.id, task.id));
+  if (labels) await replaceLabels(task.id, labels);
+  await reconcileTask(task.id);
+  return { ok: true };
 }
 
 /** Moves a task to a stage of its type, stamping or clearing its finish dates, logging the move and settling its XP. Returns the XP change. */

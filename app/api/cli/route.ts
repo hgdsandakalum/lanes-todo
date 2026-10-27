@@ -4,10 +4,12 @@ import { db, schema as s } from "@/lib/db/client";
 import { isSharedBranch, normalizeFolder, projectForFolder, resolveStage, shortId, stageWords } from "@/lib/domain/folders";
 import { branchList, isValidBranch, MAX_BRANCHES } from "@/lib/domain/repo";
 import { stageLabel, type TaskType } from "@/lib/domain/stages";
-import { addTask, moveTask } from "@/lib/tasks/core";
+import { parseTaskEdit } from "@/lib/domain/task-edit";
+import { addTask, editTask, moveTask } from "@/lib/tasks/core";
 import { loadToday, type TodayTask } from "@/lib/data/today";
 import { addDays, weekday, ymd, zonedTime } from "@/lib/domain/dates";
 import { isOverdue, withClient } from "@/lib/domain/due";
+import { formatMinutes } from "@/lib/domain/estimate";
 import { FINISHED_FOR_ME } from "@/lib/domain/stages";
 
 /**
@@ -15,11 +17,14 @@ import { FINISHED_FOR_ME } from "@/lib/domain/stages";
  * current git branch; the server works out the project and task. Auth is a bearer token, LANES_CLI_TOKEN:
  * without it set, the endpoint is off. proxy.ts lets /api/cli through, since the command has no cookie.
  *
+ * "show" reads one task in full and "edit" changes some of its fields (title, description, due, priority, estimate,
+ * blocker, labels); stage and branches stay with move and attach.
+ *
  * One read-only command, "brief", also takes LANES_BRIEF_TOKEN: a separate key for assistants (the morning
  * briefing) that can read the day's tasks but can't add, move or link anything.
  */
 
-type Body = { cmd?: string; cwd?: string; root?: string; branch?: string; text?: string; description?: string; code?: string; stage?: string; task?: string };
+type Body = { cmd?: string; cwd?: string; root?: string; branch?: string; text?: string; description?: string; code?: string; stage?: string; task?: string; set?: unknown };
 
 const digest = (v: string) => createHash("sha256").update(v).digest();
 
@@ -64,6 +69,10 @@ export async function POST(req: Request) {
       return move(cwd, branch, body);
     case "attach":
       return attach(cwd, branch, body);
+    case "show":
+      return show(cwd, branch, body);
+    case "edit":
+      return edit(cwd, branch, body);
     default:
       return fail(`Unknown command "${body.cmd}".`);
   }
@@ -185,6 +194,45 @@ async function attach(cwd: string, branch: string | null, body: Body) {
     .set({ branch: next.join(" "), ...(becomesCode ? { type: "code" as const } : {}) })
     .where(eq(s.tasks.id, task.id));
   return Response.json({ id: shortId(task.id), title: task.title, branches: next });
+}
+
+/** One task in full, for reading before an edit. */
+async function detail(t: typeof s.tasks.$inferSelect) {
+  const [project] = await db.select({ code: s.projects.code, name: s.projects.name }).from(s.projects).where(eq(s.projects.id, t.projectId)).limit(1);
+  const labels = await db
+    .select({ name: s.labels.name })
+    .from(s.taskLabels)
+    .innerJoin(s.labels, eq(s.taskLabels.labelId, s.labels.id))
+    .where(eq(s.taskLabels.taskId, t.id))
+    .orderBy(asc(s.labels.name));
+  return {
+    ...view(t, null),
+    project,
+    description: t.description,
+    due: t.due,
+    priority: t.priority,
+    estimate: t.estimateMin != null ? formatMinutes(t.estimateMin) : null,
+    blocker: t.blocker,
+    labels: labels.map((l) => l.name),
+    closed: t.closedAt != null,
+  };
+}
+
+async function show(cwd: string, branch: string | null, body: Body) {
+  const picked = await pickTask(cwd, branch, body.task);
+  if ("error" in picked) return fail(picked.error!, 404);
+  return Response.json(await detail(picked.task));
+}
+
+async function edit(cwd: string, branch: string | null, body: Body) {
+  const parsed = parseTaskEdit(body.set, ymd());
+  if (!parsed.ok) return fail(parsed.error);
+  const picked = await pickTask(cwd, branch, body.task);
+  if ("error" in picked) return fail(picked.error!, 404);
+  const done = await editTask(picked.task, parsed.value);
+  if (!done.ok) return fail(done.error);
+  const [task] = await db.select().from(s.tasks).where(eq(s.tasks.id, picked.task.id)).limit(1);
+  return Response.json(await detail(task));
 }
 
 /** A task in the brief: just enough to plan the day, kept small for assistants. */

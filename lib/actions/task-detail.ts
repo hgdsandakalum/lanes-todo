@@ -6,7 +6,7 @@ import { requireSession } from "@/lib/auth/session";
 import { isLabel, LABEL_MAX } from "@/lib/domain/quick-add";
 import { safeHttpUrl } from "@/lib/domain/repo";
 import { reconcileCheck } from "@/lib/game/engine";
-import { addTask, ensureLabels } from "@/lib/tasks/core";
+import { addTask, replaceLabels } from "@/lib/tasks/core";
 import type { FormState } from "./tasks";
 
 /** Actions on a task's page: checklist, subtasks, labels, references, dependencies and the timer. */
@@ -84,13 +84,7 @@ export async function setTaskLabels(taskId: string, input: string): Promise<Form
   if (bad) return { error: `"${bad}" can't be a label. Use letters, digits, - and _ (up to ${LABEL_MAX}).` };
   if (names.length > 12) return { error: "Keep it to 12 labels per task." };
   if (!(await exists(taskId))) return { error: "That task doesn't exist any more." };
-  const ids = await ensureLabels(names);
-  await db.batch([
-    db.delete(s.taskLabels).where(eq(s.taskLabels.taskId, taskId)),
-    ...(ids.length ? [db.insert(s.taskLabels).values(ids.map((labelId) => ({ taskId, labelId })))] : []),
-  ]);
-  // labels no task uses any more are tidied away
-  await db.delete(s.labels).where(sql`${s.labels.id} not in (select ${s.taskLabels.labelId} from ${s.taskLabels})`);
+  await replaceLabels(taskId, names);
   refresh();
   return { saved: Date.now() };
 }
