@@ -22,9 +22,12 @@ import { FINISHED_FOR_ME } from "@/lib/domain/stages";
  *
  * One read-only command, "brief", also takes LANES_BRIEF_TOKEN: a separate key for assistants (the morning
  * briefing) that can read the day's tasks but can't add, move or link anything.
+ *
+ * LANES_JARVIS_TOKEN is the assistant's capture key: "brief" plus "capture" (add a task to a #project, with an
+ * optional ticket like T-213; a ticket already open in that project is not added twice). Nothing else.
  */
 
-type Body = { cmd?: string; cwd?: string; root?: string; branch?: string; text?: string; description?: string; code?: string; stage?: string; task?: string; set?: unknown };
+type Body = { cmd?: string; cwd?: string; root?: string; branch?: string; text?: string; description?: string; code?: string; stage?: string; task?: string; set?: unknown; ticket?: string };
 
 const digest = (v: string) => createHash("sha256").update(v).digest();
 
@@ -33,10 +36,11 @@ function matches(sent: string, token: string | undefined): boolean {
   return timingSafeEqual(digest(sent), digest(token));
 }
 
-/** "full" with LANES_CLI_TOKEN, "brief" with LANES_BRIEF_TOKEN (read-only), else null. */
-function access(req: Request): "full" | "brief" | null {
+/** "full" with LANES_CLI_TOKEN, "brief" with LANES_BRIEF_TOKEN (read-only), "jarvis" with LANES_JARVIS_TOKEN (brief + capture), else null. */
+function access(req: Request): "full" | "brief" | "jarvis" | null {
   const sent = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
   if (matches(sent, process.env.LANES_CLI_TOKEN)) return "full";
+  if (matches(sent, process.env.LANES_JARVIS_TOKEN)) return "jarvis";
   if (matches(sent, process.env.LANES_BRIEF_TOKEN)) return "brief";
   return null;
 }
@@ -53,7 +57,8 @@ export async function POST(req: Request) {
     return fail("Send JSON.");
   }
   if (body.cmd === "brief") return brief();
-  if (level !== "full") return fail("This token can only read the brief.", 403);
+  if (body.cmd === "capture" && (level === "full" || level === "jarvis")) return capture(body);
+  if (level !== "full") return fail(level === "jarvis" ? "This token can only read the brief and capture tasks." : "This token can only read the brief.", 403);
   const cwd = normalizeFolder(body.cwd ?? "");
   const branch = body.branch && isValidBranch(body.branch) ? body.branch : null;
   if (!cwd) return fail("The command didn't say which folder it runs in.");
@@ -242,6 +247,7 @@ const brieft = (t: TodayTask) => ({
   where: `${t.workspaceName} / ${t.projectName}`,
   type: t.type,
   stage: stageLabel(t.type as TaskType, t.stage, t.kind),
+  ...(t.ticket ? { ticket: t.ticket } : {}),
   ...(t.priority ? { priority: t.priority } : {}),
   ...(t.due ? { due: t.due } : {}),
   ...(t.prodDate ? { prodDate: t.prodDate } : {}),
@@ -291,6 +297,15 @@ async function brief() {
     .slice(0, 20)
     .map((m) => ({ id: shortId(m.id), title: m.title, where: `${m.workspace} / ${m.project}`, stage: stageLabel(m.type as TaskType, m.to, m.kind) }));
 
+  // every open task's ticket per project code, so an assistant can tell which tickets are already in Lanes
+  const ticketRows = await db
+    .select({ code: s.projects.code, ticket: s.tasks.ticket })
+    .from(s.tasks)
+    .innerJoin(s.projects, eq(s.tasks.projectId, s.projects.id))
+    .where(and(isNull(s.tasks.closedAt), isNotNull(s.tasks.ticket), eq(s.projects.status, "active")));
+  const openTickets: Record<string, string[]> = {};
+  for (const r of ticketRows) (openTickets[r.code.toLowerCase()] ??= []).push(r.ticket!);
+
   const perWorkspace: Record<string, number> = {};
   for (const x of open) perWorkspace[x.workspaceName] = (perWorkspace[x.workspaceName] ?? 0) + 1;
 
@@ -310,5 +325,30 @@ async function brief() {
     doneToday,
     routinesToday: routines,
     openCounts: perWorkspace,
+    openTickets,
   });
+}
+
+const TICKET = /^[A-Za-z]{1,6}-?\d{1,6}$/;
+
+/** Add a task from an assistant: the line must name its #project; a ticket (e.g. T-213) is stored on the task and not added twice. */
+async function capture(body: Body) {
+  const text = (body.text ?? "").trim();
+  if (!/(^|\s)#[a-z][a-z0-9]*/i.test(text)) return fail("Name the project with #code, e.g. #gk.");
+  const ticket = body.ticket?.trim().toUpperCase() || null;
+  if (ticket && !TICKET.test(ticket)) return fail(`"${body.ticket}" isn't a ticket id. Use something like T-213.`);
+  if (ticket) {
+    const code = text.match(/(?:^|\s)#([a-z][a-z0-9]*)/i)![1].toUpperCase();
+    const [dup] = await db
+      .select({ id: s.tasks.id, title: s.tasks.title })
+      .from(s.tasks)
+      .innerJoin(s.projects, eq(s.tasks.projectId, s.projects.id))
+      .where(and(sql`upper(${s.projects.code}) = ${code}`, isNull(s.tasks.closedAt), sql`upper(${s.tasks.ticket}) = ${ticket}`))
+      .limit(1);
+    if (dup) return Response.json({ id: shortId(dup.id), title: dup.title, ticket, already: true });
+  }
+  const added = await addTask({ text, description: body.description ?? null });
+  if (!added.ok) return fail(added.error);
+  if (ticket) await db.update(s.tasks).set({ ticket }).where(eq(s.tasks.id, added.id));
+  return Response.json({ id: shortId(added.id), title: added.title, type: added.type, ticket, project: { code: added.project.code, name: added.project.name } });
 }

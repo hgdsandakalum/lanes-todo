@@ -16,6 +16,7 @@ const todayTask = {
   kind: s.tasks.kind,
   stage: s.tasks.stage,
   priority: s.tasks.priority,
+  ticket: s.tasks.ticket,
   blocker: s.tasks.blocker,
   due: s.tasks.due,
   prodDate: s.tasks.prodDate,
