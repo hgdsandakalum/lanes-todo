@@ -11,6 +11,7 @@ import { addDays, weekday, ymd, zonedTime } from "@/lib/domain/dates";
 import { isOverdue, withClient } from "@/lib/domain/due";
 import { formatMinutes } from "@/lib/domain/estimate";
 import { FINISHED_FOR_ME } from "@/lib/domain/stages";
+import { findDuplicates } from "@/lib/domain/dupes";
 
 /**
  * The lanes command (bin/lanes.mjs) talks to this one endpoint. It sends the folder it runs in and the
@@ -24,10 +25,11 @@ import { FINISHED_FOR_ME } from "@/lib/domain/stages";
  * briefing) that can read the day's tasks but can't add, move or link anything.
  *
  * LANES_JARVIS_TOKEN is the assistant's capture key: "brief" plus "capture" (add a task to a #project, with an
- * optional ticket like T-213; a ticket already open in that project is not added twice). Nothing else.
+ * optional ticket like T-213). It won't add a task the project already has open: same ticket (T-213 = T213) returns
+ * the existing task, and a title that says the same thing returns "possibleDuplicate" unless sent with force: true.
  */
 
-type Body = { cmd?: string; cwd?: string; root?: string; branch?: string; text?: string; description?: string; code?: string; stage?: string; task?: string; set?: unknown; ticket?: string };
+type Body = { cmd?: string; cwd?: string; root?: string; branch?: string; text?: string; description?: string; code?: string; stage?: string; task?: string; set?: unknown; ticket?: string; force?: boolean };
 
 const digest = (v: string) => createHash("sha256").update(v).digest();
 
@@ -298,13 +300,21 @@ async function brief() {
     .map((m) => ({ id: shortId(m.id), title: m.title, where: `${m.workspace} / ${m.project}`, stage: stageLabel(m.type as TaskType, m.to, m.kind) }));
 
   // every open task's ticket per project code, so an assistant can tell which tickets are already in Lanes
-  const ticketRows = await db
-    .select({ code: s.projects.code, ticket: s.tasks.ticket })
+  // and every open task per project (title, ticket, stage), so an assistant can tell what's already on the board,
+  // including plain to-dos that none of the lists above show
+  const openRows = await db
+    .select({ id: s.tasks.id, code: s.projects.code, title: s.tasks.title, ticket: s.tasks.ticket, type: s.tasks.type, kind: s.tasks.kind, stage: s.tasks.stage })
     .from(s.tasks)
     .innerJoin(s.projects, eq(s.tasks.projectId, s.projects.id))
-    .where(and(isNull(s.tasks.closedAt), isNotNull(s.tasks.ticket), eq(s.projects.status, "active")));
+    .where(and(isNull(s.tasks.closedAt), eq(s.projects.status, "active")))
+    .orderBy(asc(s.projects.code), asc(s.tasks.sort), asc(s.tasks.createdAt));
   const openTickets: Record<string, string[]> = {};
-  for (const r of ticketRows) (openTickets[r.code.toLowerCase()] ??= []).push(r.ticket!);
+  const openTasks: Record<string, { id: string; title: string; ticket?: string; stage: string }[]> = {};
+  for (const r of openRows) {
+    const code = r.code.toLowerCase();
+    if (r.ticket) (openTickets[code] ??= []).push(r.ticket);
+    (openTasks[code] ??= []).push({ id: shortId(r.id), title: r.title, ...(r.ticket ? { ticket: r.ticket } : {}), stage: stageLabel(r.type as TaskType, r.stage, r.kind) });
+  }
 
   const perWorkspace: Record<string, number> = {};
   for (const x of open) perWorkspace[x.workspaceName] = (perWorkspace[x.workspaceName] ?? 0) + 1;
@@ -326,6 +336,7 @@ async function brief() {
     routinesToday: routines,
     openCounts: perWorkspace,
     openTickets,
+    openTasks,
   });
 }
 
@@ -334,19 +345,28 @@ const TICKET = /^[A-Za-z]{1,6}-?\d{1,6}$/;
 /** Add a task from an assistant: the line must name its #project; a ticket (e.g. T-213) is stored on the task and not added twice. */
 async function capture(body: Body) {
   const text = (body.text ?? "").trim();
-  if (!/(^|\s)#[a-z][a-z0-9]*/i.test(text)) return fail("Name the project with #code, e.g. #gk.");
+  const codeMatch = text.match(/(?:^|\s)#([a-z][a-z0-9]*)/i);
+  if (!codeMatch) return fail("Name the project with #code, e.g. #gk.");
   const ticket = body.ticket?.trim().toUpperCase() || null;
   if (ticket && !TICKET.test(ticket)) return fail(`"${body.ticket}" isn't a ticket id. Use something like T-213.`);
-  if (ticket) {
-    const code = text.match(/(?:^|\s)#([a-z][a-z0-9]*)/i)![1].toUpperCase();
-    const [dup] = await db
-      .select({ id: s.tasks.id, title: s.tasks.title })
-      .from(s.tasks)
-      .innerJoin(s.projects, eq(s.tasks.projectId, s.projects.id))
-      .where(and(sql`upper(${s.projects.code}) = ${code}`, isNull(s.tasks.closedAt), sql`upper(${s.tasks.ticket}) = ${ticket}`))
-      .limit(1);
-    if (dup) return Response.json({ id: shortId(dup.id), title: dup.title, ticket, already: true });
+
+  const open = await db
+    .select({ id: s.tasks.id, title: s.tasks.title, ticket: s.tasks.ticket })
+    .from(s.tasks)
+    .innerJoin(s.projects, eq(s.tasks.projectId, s.projects.id))
+    .where(and(sql`upper(${s.projects.code}) = ${codeMatch[1].toUpperCase()}`, isNull(s.tasks.closedAt)));
+  const dupes = findDuplicates({ title: text, ticket, description: body.description }, open);
+  if (dupes.reason === "ticket") {
+    const t = dupes.tasks[0];
+    return Response.json({ id: shortId(t.id), title: t.title, ticket: t.ticket, already: true });
   }
+  if (dupes.tasks.length && !body.force) {
+    return Response.json(
+      { error: "This looks like a task the project already has. Send force: true to add it anyway.", possibleDuplicate: dupes.tasks.slice(0, 3).map((t) => ({ id: shortId(t.id), title: t.title, ...(t.ticket ? { ticket: t.ticket } : {}) })) },
+      { status: 409 },
+    );
+  }
+
   const added = await addTask({ text, description: body.description ?? null });
   if (!added.ok) return fail(added.error);
   if (ticket) await db.update(s.tasks).set({ ticket }).where(eq(s.tasks.id, added.id));
