@@ -6,9 +6,9 @@
     "semantic_hash": ""
   },
   ".impeccable/hook.cache.json": {
-    "mtime": 1792397015.2305942,
-    "seen": 1792437482.034797,
-    "ast_hash": "2281b6ba3c797bad9bf06b5d36638f5e",
+    "mtime": 1792437495.3167691,
+    "seen": 1793123908.04184,
+    "ast_hash": "5378308df71703ff8e8e146a61c63850",
     "semantic_hash": ""
   },
   ".impeccable/mocks/decision/payload.json": {
@@ -96,9 +96,9 @@
     "semantic_hash": ""
   },
   "app/api/cli/route.ts": {
-    "mtime": 1791987904.2686434,
-    "seen": 1792301933.881839,
-    "ast_hash": "b62b3c6d8e24f6a5503d800764c4f8b7",
+    "mtime": 1793123743.8415697,
+    "seen": 1793123908.0424662,
+    "ast_hash": "cea21d582b432079891b0006d0cf9785",
     "semantic_hash": ""
   },
   "app/api/export/route.ts": {
@@ -510,9 +510,9 @@
     "semantic_hash": ""
   },
   "lib/actions/task-detail.ts": {
-    "mtime": 1792354544.404787,
-    "seen": 1792355131.4057531,
-    "ast_hash": "1ca262c15ad4a222a321382fb9c6ec4b",
+    "mtime": 1793123729.4747145,
+    "seen": 1793123908.045202,
+    "ast_hash": "58ac591d80a46689e8aa4f947a26bd7d",
     "semantic_hash": ""
   },
   "lib/actions/tasks.ts": {
@@ -618,9 +618,9 @@
     "semantic_hash": ""
   },
   "lib/data/today.ts": {
-    "mtime": 1792354548.345009,
-    "seen": 1792355131.4062662,
-    "ast_hash": "03562ebe75d74be8f4975c622b117887",
+    "mtime": 1792947969.8729782,
+    "seen": 1793123908.0458372,
+    "ast_hash": "876d04b0686adbe49ccac0d215b42529",
     "semantic_hash": ""
   },
   "lib/db/backup.test.ts": {
@@ -882,9 +882,9 @@
     "semantic_hash": ""
   },
   "lib/tasks/core.ts": {
-    "mtime": 1792354275.4483979,
-    "seen": 1792355131.407913,
-    "ast_hash": "aa89dea6fb5a5e5fad3582c6158dfeba",
+    "mtime": 1793123724.1906035,
+    "seen": 1793123908.04761,
+    "ast_hash": "022f9af0a7c75d85b7e002e2c359d1c6",
     "semantic_hash": ""
   },
   "next.config.ts": {
@@ -1167,6 +1167,18 @@
     "mtime": 1792387874.3465981,
     "seen": 1792388516.002079,
     "ast_hash": "b31e5e647f4e737621258fcfa7567f95",
+    "semantic_hash": ""
+  },
+  "lib/domain/task-edit.test.ts": {
+    "mtime": 1793123710.4195092,
+    "seen": 1793123908.0471501,
+    "ast_hash": "422dadf022d67dfb036570fe882df88e",
+    "semantic_hash": ""
+  },
+  "lib/domain/task-edit.ts": {
+    "mtime": 1793123699.4493232,
+    "seen": 1793123908.047151,
+    "ast_hash": "da9be6335871886e4c52b9ba31d66ded",
     "semantic_hash": ""
   }
 }
